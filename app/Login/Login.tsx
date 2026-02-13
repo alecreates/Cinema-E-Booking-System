@@ -18,7 +18,7 @@ const Login = () => {
         console.log("Logging in:", { email, password });
 
         // after successful login, route to Home
-        //router.push("/HomePage"); // <-- routes to app/home/page.tsx
+        router.push("/HomePage"); // <-- routes to app/home/page.tsx
 
     };
 
@@ -66,7 +66,7 @@ const Login = () => {
 
                             {/* Forgot password */}
                             <div className="text-end mb-3">
-                                <a href="/forgot-password" style={{ fontSize: "0.9rem" }}>
+                                <a href="/ForgotPassword" style={{ fontSize: "0.9rem" }}>
                                     Forgot password?
                                 </a>
                             </div>
