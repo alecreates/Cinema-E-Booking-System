@@ -2,11 +2,26 @@
 
 import React, { useState } from "react";
 import { Container, Row, Col, Card, Form, Button } from "react-bootstrap";
+import { useRouter } from "next/navigation";
 
 const Login = () => {
 
+    const router = useRouter();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
-    
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        // TODO: handle login API call here
+        console.log("Logging in:", { email, password });
+
+        // after successful login, route to Home
+        //router.push("/HomePage"); // <-- routes to app/home/page.tsx
+
+    };
+
     return (
         <Container fluid className="vh-100 d-flex align-items-center justify-content-center">
             <Row className="w-100 justify-content-center">
@@ -14,17 +29,29 @@ const Login = () => {
                     <Card className="p-4 shadow">
                         <h3 className="text-center mb-4">Log In</h3>
 
-                        <Form>
+                        <Form onSubmit={handleSubmit}>
                             {/* Email */}
                             <Form.Group className="mb-3" controlId="formEmail">
                                 <Form.Label>Email</Form.Label>
-                                <Form.Control type="email" placeholder="Enter email" />
+                                <Form.Control
+                                    type="email"
+                                    placeholder="Enter email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                />
                             </Form.Group>
 
                             {/* Password */}
                             <Form.Group className="mb-2" controlId="formPassword">
                                 <Form.Label>Password</Form.Label>
-                                <Form.Control type="password" placeholder="Enter password" />
+                                <Form.Control
+                                    type="password"
+                                    placeholder="Enter password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
                             </Form.Group>
 
                             {/* Remember me checkbox */}
