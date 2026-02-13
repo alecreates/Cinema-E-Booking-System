@@ -79,8 +79,8 @@ const Login = () => {
 
                         {/* Sign up reference */}
                         <div className="text-center">
-                            <span>Already have an account? </span>
-                            <a href="/register">Log in</a>
+                            <span>Don't have an account? </span>
+                            <a href="/Register">Create Account</a>
                         </div>
                     </Card>
                 </Col>
