@@ -1,9 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Container, Row, Col, Card, Form, Button } from "react-bootstrap";
 
 const Login = () => {
+
+    const [rememberMe, setRememberMe] = useState(false);
+    
     return (
         <Container fluid className="vh-100 d-flex align-items-center justify-content-center">
             <Row className="w-100 justify-content-center">
@@ -22,6 +25,16 @@ const Login = () => {
                             <Form.Group className="mb-2" controlId="formPassword">
                                 <Form.Label>Password</Form.Label>
                                 <Form.Control type="password" placeholder="Enter password" />
+                            </Form.Group>
+
+                            {/* Remember me checkbox */}
+                            <Form.Group className="mb-3" controlId="formRememberMe">
+                                <Form.Check
+                                    type="checkbox"
+                                    label="Remember me"
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                />
                             </Form.Group>
 
                             {/* Forgot password */}
