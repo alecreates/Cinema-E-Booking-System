@@ -72,9 +72,9 @@ const HomePage = () => {
                     <Button
                       variant="primary"
                       className="mt-auto"
-                      onClick={() => router.push("/Showtimes")}
+                      onClick={() => router.push("/MovieDetails")}
                     >
-                      View Showtimes
+                      View Movie Details
                     </Button>
                   </Card.Body>
                 </Card>
