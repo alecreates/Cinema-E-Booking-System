@@ -9,9 +9,11 @@ import MovieInfoCard from "./MovieInfoCard/MovieInfo";
 import Cast from "./CastCard/Cast";
 import TrailerCard from "./TrailerCard/page";
 import ShowtimesCard from "./ShowtimesCard/ShowtimesCard";
+import { useRouter } from "next/navigation";
+
 
 const MovieDetails = () => {
-  const [movie, setMovie] = useState<Movie | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     // fetch actual movies here when API is working
@@ -22,7 +24,19 @@ const MovieDetails = () => {
 
       <Card className="shadow-sm ">
 
-        <Card.Header className="text-center">Movie Details</Card.Header>
+        <Card.Header className="d-flex align-items-center justify-content-between">
+          <button
+            className="btn btn-outline-secondary btn-sm"
+            onClick={() => router.push("/HomePage")}
+          >
+            ← Back
+          </button>
+
+          <span className="mx-auto fw-bold">Movie Details</span>
+
+          {/* spacer to balance layout */}
+          <div style={{ width: "60px" }} />
+        </Card.Header>
 
         <div className="d-flex flex-wrap align-items-stretch">
           {/* Movie Header */}
@@ -34,12 +48,12 @@ const MovieDetails = () => {
           <div className="flex-grow-1">
             <MovieInfoCard movie={mockMovie} />
           </div>
-          
+
           <div className="flex-grow-1">
             <MovieSynopsis movie={mockMovie} />
           </div>
         </div>
-        
+
         <TrailerCard movie={mockMovie}></TrailerCard>
         <ShowtimesCard movie={mockMovie}></ShowtimesCard>
 
