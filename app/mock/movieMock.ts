@@ -31,14 +31,9 @@ export const mockMovie: Movie = {
       }
     ],
   
-    trailer: 
-      {
-        imageUrl: "/trailers/interstellar-thumb.jpg",
-        videoUrl: "https://www.youtube.com/embed/zSWdZVtXT7E",
-        provider: "youtube"
-      },
-  
     showtimes: [
-      { id: "s1", date: "2026-02-13", time: "19:30", hall: "Hall 1" }
+      { id: "s1", date: "2026-02-13", time: "5:30", hall: "Hall 1" },
+      { id: "s3", date: "2026-02-13", time: "7:30", hall: "Hall 1" },
+      { id: "s2", date: "2026-02-13", time: "6:30", hall: "Hall 2" }
     ]
 };

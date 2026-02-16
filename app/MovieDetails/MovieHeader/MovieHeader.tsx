@@ -37,10 +37,6 @@ const MovieHeader = ({ movie }: { movie: Movie }) => {
                         {movie.description}
                     </p>
 
-                    <Button variant="danger" size="sm">
-                        ▶ Watch Trailer
-                    </Button>
-
                 </div>
             </div>
         </Card>

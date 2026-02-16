@@ -20,12 +20,6 @@ export type CastMember = {
     role: string;      // character name
 };
 
-export type Trailer = {
-    imageUrl: string;  // trailer thumbnail
-    videoUrl: string;  // embed or video URL
-    provider?: "youtube" | "vimeo" | "local";
-  };
-
 export type Movie = {
     status: MovieStatus;
     id: string;
@@ -46,6 +40,4 @@ export type Movie = {
     producer: string
 
     reviews: Review[];
-
-    trailer: Trailer;
 };

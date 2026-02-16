@@ -7,6 +7,8 @@ import { Card } from "react-bootstrap";
 import MovieSynopsis from "./MovieSynopsisCard/MovieSynopsis";
 import MovieInfoCard from "./MovieInfoCard/MovieInfo";
 import Cast from "./CastCard/Cast";
+import TrailerCard from "./TrailerCard/page";
+import ShowtimesCard from "./ShowtimesCard/ShowtimesCard";
 
 const MovieDetails = () => {
   const [movie, setMovie] = useState<Movie | null>(null);
@@ -17,8 +19,11 @@ const MovieDetails = () => {
 
   return (
     <>
-      <h1>Movie Details</h1>
+
       <Card className="shadow-sm ">
+
+        <Card.Header className="text-center">Movie Details</Card.Header>
+
         <div className="d-flex flex-wrap align-items-stretch">
           {/* Movie Header */}
           <div className="flex-shrink-0" style={{ minWidth: "200px" }}>
@@ -29,15 +34,14 @@ const MovieDetails = () => {
           <div className="flex-grow-1">
             <MovieInfoCard movie={mockMovie} />
           </div>
-        </div>
-   
-        <MovieSynopsis movie={mockMovie} />
-        <div className="d-flex flex-wrap align-items-stretch">
-          <div className="flex-shrink-0">
-            <Cast movie={mockMovie}></Cast>
+          
+          <div className="flex-grow-1">
+            <MovieSynopsis movie={mockMovie} />
           </div>
         </div>
         
+        <TrailerCard movie={mockMovie}></TrailerCard>
+        <ShowtimesCard movie={mockMovie}></ShowtimesCard>
 
       </Card>
 
