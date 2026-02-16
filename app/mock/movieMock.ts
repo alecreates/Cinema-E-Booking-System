@@ -8,7 +8,7 @@ export const mockMovie: Movie = {
     synopsis: "In the future, Earth is becoming uninhabitable...",
     rating: "PG-13",
     posterUrl: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
-    trailerUrl: "https://youtube.com/watch?v=zSWdZVtXT7E",
+    trailerUrl: "https://www.youtube.com/embed/zSWdZVtXT7E?si=mRK4qhN6rnr8ABrW",
     duration: 169,
     genre: ["Sci-Fi", "Drama"],
     category: "Science Fiction",

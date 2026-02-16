@@ -6,15 +6,14 @@ const TrailerCard = ({ movie }: { movie: Movie }) => (
 
         <Card.Header className="text-center">Watch Trailer</Card.Header>
         <div className="video-responsive d-flex justify-content-center">
-            <iframe
-                width="800"
-                height="480"
-                src={`https://www.youtube.com/embed/${movie.trailerUrl}`}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                title="Embedded youtube"
-            />
+            <iframe width="560" 
+                height="315" 
+                src={movie.trailerUrl} 
+                title="YouTube video player" 
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                referrerPolicy="strict-origin-when-cross-origin" 
+                allowFullScreen></iframe>
         </div>
     </Card>
 );

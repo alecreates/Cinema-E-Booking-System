@@ -1,6 +1,7 @@
 import { Movie } from "@/app/types/movie";
 import React from "react";
 import { Card } from "react-bootstrap";
+import styles from './ShowtimesCard.module.css'
 
 const ShowtimesCard = ({ movie }: { movie: Movie }) => {
 
@@ -25,7 +26,7 @@ const ShowtimesCard = ({ movie }: { movie: Movie }) => {
                     {movie.showtimes.map((showtime) => (
                         <Card
                             key={showtime.id}
-                            className="p-2 showtime-card"
+                            className={`p-2 ${styles.hoverableCard}`}
                             style={{
                                 width: "140px",
                                 cursor: "pointer",
