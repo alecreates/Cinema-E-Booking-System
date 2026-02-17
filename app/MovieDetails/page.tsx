@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Movie } from "../types/movie";
+import { Movie } from "../../types/movie";
 import MovieHeader from "./MovieHeader/MovieHeader";
 import { mockMovie } from "../mock/movieMock";
 import { Card } from "react-bootstrap";

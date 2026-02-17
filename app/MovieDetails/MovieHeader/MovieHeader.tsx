@@ -1,6 +1,6 @@
 import React from "react";
 import { Card, Image, Badge, Button } from "react-bootstrap";
-import { Movie } from "../../types/movie";
+import { Movie } from "../../../types/movie";
 
 const MovieHeader = ({ movie }: { movie: Movie }) => {
     return (

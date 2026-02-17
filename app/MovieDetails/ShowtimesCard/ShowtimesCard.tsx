@@ -1,4 +1,4 @@
-import { Movie } from "@/app/types/movie";
+import { Movie } from "@/types/movie";
 import React from "react";
 import { Card } from "react-bootstrap";
 import styles from './ShowtimesCard.module.css'

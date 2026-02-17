@@ -1,4 +1,4 @@
-import { Movie } from "@/app/types/movie";
+import { Movie } from "@/types/movie";
 import { Card } from "react-bootstrap";
 
 const TrailerCard = ({ movie }: { movie: Movie }) => (

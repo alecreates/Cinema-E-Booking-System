@@ -1,4 +1,4 @@
-import { Movie } from "../types/movie";
+import { Movie } from "../../types/movie";
 
 export const mockMovie: Movie = {
     status: "now_showing",
