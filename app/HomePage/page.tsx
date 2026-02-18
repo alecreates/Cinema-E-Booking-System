@@ -10,6 +10,7 @@ const HomePage = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState('');
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -30,8 +31,12 @@ const HomePage = () => {
     fetchMovies();
   }, []);
   const filterMovies = movies.filter((m) =>
-    m.title.toLowerCase().includes(query.toLowerCase())
-);
+    m.title.toLowerCase().includes(query.toLowerCase()) &&
+    (selectedGenre ? m.genre.includes(selectedGenre) : true)
+  );
+  const allGenres = [...new Set(movies.flatMap((movie) => movie.genre))];
+  
+
 
   return (
     <Container fluid className="min-vh-100 bg-light py-4">
@@ -72,6 +77,17 @@ const HomePage = () => {
                 value = {query}
                 onChange={(e) => setQuery(e.target.value)}
               />
+              <Form.Select
+                value = {selectedGenre}
+                onChange={(e) => setSelectedGenre(e.target.value)}>
+                <option value ="">All Genres</option>
+                {allGenres.map((genre)=>(
+                  <option key={genre} value = {genre}>
+                    {genre}
+                  </option>
+                )
+                )}
+              </Form.Select>
             </Form>
           </Card>
         </Col>
