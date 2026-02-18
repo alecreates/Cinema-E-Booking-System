@@ -9,6 +9,9 @@ const HomePage = () => {
   const router = useRouter();
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -28,6 +31,17 @@ const HomePage = () => {
 
     fetchMovies();
   }, []);
+  const filterMovies = movies.filter((m) =>
+    m.title.toLowerCase().includes(query.toLowerCase()) &&
+    (selectedGenre ? m.genre.includes(selectedGenre) : true) &&
+    (selectedDate ? m.showtimes.some(showtime => showtime.date === selectedDate) : true)
+  );
+  const nowShowing = filterMovies.filter(m => m.status === "now_showing");
+  const comingSoon = filterMovies.filter(m => m.status === "coming_soon");
+
+  const allGenres = [...new Set(movies.flatMap((movie) => movie.genre))];
+  
+
 
   return (
     <Container fluid className="min-vh-100 bg-light py-4">
@@ -65,6 +79,24 @@ const HomePage = () => {
               <Form.Control
                 type="text"
                 placeholder="Search movies or theaters..."
+                value = {query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              <Form.Select
+                value = {selectedGenre}
+                onChange={(e) => setSelectedGenre(e.target.value)}>
+                <option value ="">All Genres</option>
+                {allGenres.map((genre)=>(
+                  <option key={genre} value = {genre}>
+                    {genre}
+                  </option>
+                )
+                )}
+              </Form.Select>
+              <Form.Control
+                type = "date"
+                value = {selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
               />
             </Form>
           </Card>
@@ -77,7 +109,7 @@ const HomePage = () => {
           <h5 className="mb-3">Now Showing</h5>
 
           <Row>
-            {movies.map((movie) => (
+            {nowShowing.map((movie) => (
               <Col xs={12} sm={6} md={4} lg={3} key={movie.id} className="mb-4">
                 <Card className="h-100 shadow-sm">
                   <div
@@ -110,7 +142,45 @@ const HomePage = () => {
           </Row>
         </Col>
       </Row>
+      {/* Coming Soon */}
+      <Row className="justify-content-center">
+        <Col xs={11} md={10} lg={8}>
+          <h5 className="mb-3">Coming Soon</h5>
 
+          <Row>
+            {comingSoon.map((movie) => (
+              <Col xs={12} sm={6} md={4} lg={3} key={movie.id} className="mb-4">
+                <Card className="h-100 shadow-sm">
+                  <div
+                    style={{
+                      height: "180px",
+                      backgroundImage: `url(${movie.posterUrl})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }}
+                  />
+
+                  <Card.Body className="d-flex flex-column">
+                    <Card.Title>{movie.title}</Card.Title>
+
+                    <Card.Text className="text-muted">
+                      {movie.genre.join(", ")} • {movie.rating}
+                    </Card.Text>
+
+                    <Button
+                      variant="primary"
+                      className="mt-auto"
+                      onClick={() => router.push(`/MovieDetails/${movie.id}`)}
+                    >
+                      View Movie Details
+                    </Button>
+                  </Card.Body>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </Col>
+      </Row>    
       {/* Footer */}
       <Row className="mt-5 justify-content-center">
         <Col xs={11} md={10} lg={8} className="text-center text-muted">
