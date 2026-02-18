@@ -7,7 +7,7 @@ import * as MovieService from "@/services/MovieService";
  */
 export async function GET(req: NextRequest) {
 
-    const movies = await MovieService.getAllMovies();
+   const movies = await MovieService.getAllMovies();
 
     return NextResponse.json({
       success: true,

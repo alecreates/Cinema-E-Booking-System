@@ -1,30 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import * as MovieService from "@/services/MovieService";
+import { getMovieById } from "@/services/MovieService";
 
-export async function GET(
-    req: NextRequest,
-    { params }: { params: { id: string } }
-) {
+export async function GET(req: NextRequest, context: { params: any }) {
     try {
-        const { id } = params;
-        const movie = await MovieService.getMovieById(id);
+        // UNWRAP params first
+        const params = await context.params;
+        const id = params.id as string;
+
+        console.log("movie id:", id);
+
+        const movie = await getMovieById(id);
 
         if (!movie) {
             return NextResponse.json(
-                { success: false, message: `Movie with id ${id} not found` },
+                { success: false, message: "Movie not found" },
                 { status: 404 }
             );
         }
 
-        return NextResponse.json({ success: true, data: movie });
-    } catch (err: unknown) {
-        // type-safe error handling
-        let message = "Unknown error";
-        if (err instanceof Error) message = err.message;
-        else if (typeof err === "string") message = err;
-
+        return NextResponse.json({
+            success: true,
+            data: movie,
+        });
+    } catch (err) {
+        console.error(err);
         return NextResponse.json(
-            { success: false, message, data: null },
+            { success: false, message: "Server error" },
             { status: 500 }
         );
     }

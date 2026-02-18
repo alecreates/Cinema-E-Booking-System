@@ -1,11 +1,33 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Card, Button, Form } from "react-bootstrap";
 import { useRouter } from "next/navigation";
+import { Movie } from "@/types/movie";
 
 const HomePage = () => {
   const router = useRouter();
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMovies = async () => {
+      try {
+        const res = await fetch("/api/movies");
+
+        if (!res.ok) throw new Error("Failed to fetch movies");
+
+        const json = await res.json();
+        setMovies(json.data);   // <-- your API returns { success, message, data }
+      } catch (err) {
+        console.error("Error fetching movies:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMovies();
+  }, []);
 
   return (
     <Container fluid className="min-vh-100 bg-light py-4">
@@ -55,24 +77,29 @@ const HomePage = () => {
           <h5 className="mb-3">Now Showing</h5>
 
           <Row>
-            {[1, 2, 3, 4].map((movie) => (
-              <Col xs={12} sm={6} md={4} lg={3} key={movie} className="mb-4">
+            {movies.map((movie) => (
+              <Col xs={12} sm={6} md={4} lg={3} key={movie.id} className="mb-4">
                 <Card className="h-100 shadow-sm">
                   <div
-                    style={{ height: "180px", background: "#ddd" }}
-                    className="d-flex align-items-center justify-content-center"
-                  >
-                    Poster
-                  </div>
+                    style={{
+                      height: "180px",
+                      backgroundImage: `url(${movie.posterUrl})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }}
+                  />
+
                   <Card.Body className="d-flex flex-column">
-                    <Card.Title>Movie Title</Card.Title>
+                    <Card.Title>{movie.title}</Card.Title>
+
                     <Card.Text className="text-muted">
-                      Genre • Rating
+                      {movie.genre.join(", ")} • {movie.rating}
                     </Card.Text>
+
                     <Button
                       variant="primary"
                       className="mt-auto"
-                      onClick={() => router.push("/MovieDetails")}
+                      onClick={() => router.push(`/MovieDetails/${movie.id}`)}
                     >
                       View Movie Details
                     </Button>
