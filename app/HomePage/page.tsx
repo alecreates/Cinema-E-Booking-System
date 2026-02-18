@@ -11,6 +11,7 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -32,7 +33,8 @@ const HomePage = () => {
   }, []);
   const filterMovies = movies.filter((m) =>
     m.title.toLowerCase().includes(query.toLowerCase()) &&
-    (selectedGenre ? m.genre.includes(selectedGenre) : true)
+    (selectedGenre ? m.genre.includes(selectedGenre) : true) &&
+    (selectedDate ? m.showtimes.some(showtime => showtime.date === selectedDate) : true)
   );
   const allGenres = [...new Set(movies.flatMap((movie) => movie.genre))];
   
@@ -88,6 +90,11 @@ const HomePage = () => {
                 )
                 )}
               </Form.Select>
+              <Form.Control
+                type = "date"
+                value = {selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+              />
             </Form>
           </Card>
         </Col>
