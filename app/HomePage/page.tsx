@@ -9,6 +9,7 @@ const HomePage = () => {
   const router = useRouter();
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -28,6 +29,9 @@ const HomePage = () => {
 
     fetchMovies();
   }, []);
+  const filterMovies = movies.filter((m) =>
+    m.title.toLowerCase().includes(query.toLowerCase())
+);
 
   return (
     <Container fluid className="min-vh-100 bg-light py-4">
@@ -65,6 +69,8 @@ const HomePage = () => {
               <Form.Control
                 type="text"
                 placeholder="Search movies or theaters..."
+                value = {query}
+                onChange={(e) => setQuery(e.target.value)}
               />
             </Form>
           </Card>
@@ -77,7 +83,7 @@ const HomePage = () => {
           <h5 className="mb-3">Now Showing</h5>
 
           <Row>
-            {movies.map((movie) => (
+            {filterMovies.map((movie) => (
               <Col xs={12} sm={6} md={4} lg={3} key={movie.id} className="mb-4">
                 <Card className="h-100 shadow-sm">
                   <div
