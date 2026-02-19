@@ -7,7 +7,6 @@ export async function GET(req: NextRequest, context: { params: any }) {
         const params = await context.params;
         const id = params.id as string;
 
-        console.log("movie id:", id);
 
         const movie = await getMovieById(id);
 
