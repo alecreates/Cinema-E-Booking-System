@@ -1,44 +1,58 @@
-import { Movie } from "@/types/movie";
-import { mockMovie } from "@/app/mock/movieMock";
-import { mockMovie2 } from "@/app/mock/movieMock2";
-import { mockMovie3 } from "@/app/mock/movieMock3";
-import { mockMovie4 } from "@/app/mock/movieMock4";
+import pool from "./db";
 
-// CONNECT WITH DB IN THIS FILE
+//frotnedn mapping 
+function mapRow(row: any) {
+  return {
+    ...row,
+    genre: row.genre ? row.genre.split(",").map((g: string) => g.trim()) : [],
+    posterUrl: row.poster_url,
+    trailerUrl: row.trailer_url,
+  };
+}
 
-// implement for deliverable 1
 export async function getAllMovies() {
-
-    // DB call later, for now adding mock movies
-
-    const movies: Movie[] = [
-        mockMovie,
-        mockMovie2,
-        mockMovie3,
-        mockMovie4,
-    ];
-
-    return movies;
+  const [rows] = await pool.query("SELECT * FROM movies");
+  // @ts-ignore
+  return rows.map(mapRow);
+}
+//
+export async function getMovieById(id: string) {
+  const [rows] = await pool.query("SELECT * FROM movies WHERE id = ?", [id]);
+  // @ts-ignore
+  if (!rows.length) return null;
+  // @ts-ignore
+  return mapRow(rows[0]);
 }
 
-// implement for deliverable 1
-export async function getMovieById(id: string): Promise<Movie | null> {
+// frontend -> DB insert
+export async function createMovie(movie: any) {
+  const genreString = Array.isArray(movie.genre)
+    ? movie.genre.join(",")
+    : (movie.genre ?? "");
 
-    // DB call later, for now using mock movies array
+  const poster_url = movie.poster_url ?? movie.posterUrl ?? "";
+  const trailer_url = movie.trailer_url ?? movie.trailerUrl ?? "";
+  const show_date = movie.show_date ?? movie.showDate ?? null;
 
-    const movies: Movie[] = [
-        mockMovie,
-        mockMovie2,
-        mockMovie3,
-        mockMovie4,
-    ];
+  await pool.query(
+    `INSERT INTO movies
+      (id, title, description, synopsis, rating, poster_url, trailer_url, duration, genre, status, show_date)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      movie.id,
+      movie.title,
+      movie.description ?? "",
+      movie.synopsis ?? "",
+      movie.rating ?? "",
+      poster_url,
+      trailer_url,
+      movie.duration ?? 0,
+      genreString,
+      movie.status,
+      show_date,
+    ]
+  );
 
-    const movie = movies.find((m) => m.id === id);
-    return movie || null;
-}
-
-
-export async function createMovie(data: Movie) {
-    // DB insert later
-    return data;
+  // return in frontend format
+  return await getMovieById(movie.id);
 }

@@ -13,6 +13,12 @@ pnpm dev
 # or
 bun dev
 ```
+Also, 
+1.install mysql: brew install mysql
+2. start mysql: brew services start mysql
+3.set password (123) (no for all other options): mysql_secure_installation
+4. setup seed: mysql -u root -p < db/setup.sql
+5. npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
