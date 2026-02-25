@@ -18,6 +18,9 @@ const MovieDetails = () => {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
 
+  //remove when showtimes are added to database
+  const showtimes = ["2:00 PM", "5:00 PM", "8:00 PM"];
+
   useEffect(() => {
     const fetchMovie = async () => {
       try {
