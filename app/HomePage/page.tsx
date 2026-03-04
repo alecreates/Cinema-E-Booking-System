@@ -13,6 +13,8 @@ const HomePage = () => {
   const [selectedGenre, setSelectedGenre] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
 
+
+
   useEffect(() => {
     const fetchMovies = async () => {
       try {
@@ -40,8 +42,8 @@ const HomePage = () => {
   const comingSoon = filterMovies.filter(m => m.status === "coming_soon");
 
   const allGenres = [...new Set(movies.flatMap((movie) => movie.genre))];
-  
 
+  const noResults = !loading && nowShowing.length === 0 && comingSoon.length === 0;
 
   return (
     <Container fluid className="min-vh-100 bg-light py-4">
@@ -79,29 +81,39 @@ const HomePage = () => {
               <Form.Control
                 type="text"
                 placeholder="Search movies or theaters..."
-                value = {query}
+                value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
               <Form.Select
-                value = {selectedGenre}
+                value={selectedGenre}
                 onChange={(e) => setSelectedGenre(e.target.value)}>
-                <option value ="">All Genres</option>
-                {allGenres.map((genre)=>(
-                  <option key={genre} value = {genre}>
+                <option value="">All Genres</option>
+                {allGenres.map((genre) => (
+                  <option key={genre} value={genre}>
                     {genre}
                   </option>
                 )
                 )}
               </Form.Select>
               <Form.Control
-                type = "date"
-                value = {selectedDate}
+                type="date"
+                value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
               />
             </Form>
           </Card>
         </Col>
       </Row>
+
+      {noResults && (
+        <Row className="justify-content-center mb-4">
+          <Col xs={11} md={10} lg={8}>
+            <Card className="p-4 text-center shadow-sm">
+              <h6 className="text-muted mb-0">No results found.</h6>
+            </Card>
+          </Col>
+        </Row>
+      )}
 
       {/* Now Showing */}
       <Row className="justify-content-center">
@@ -142,6 +154,7 @@ const HomePage = () => {
           </Row>
         </Col>
       </Row>
+
       {/* Coming Soon */}
       <Row className="justify-content-center">
         <Col xs={11} md={10} lg={8}>
@@ -180,7 +193,7 @@ const HomePage = () => {
             ))}
           </Row>
         </Col>
-      </Row>    
+      </Row>
       {/* Footer */}
       <Row className="mt-5 justify-content-center">
         <Col xs={11} md={10} lg={8} className="text-center text-muted">
