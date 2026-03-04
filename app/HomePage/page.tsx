@@ -11,10 +11,12 @@ const HomePage = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
-  const [selectedGenres, setSelectedGenres] = useState<readonly {label: string, value: string}[]>([]);
+  const [selectedGenres, setSelectedGenres] = useState<readonly { label: string, value: string }[]>([]);
   const [selectedDate, setSelectedDate] = useState('');
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     const fetchMovies = async () => {
       try {
         const res = await fetch("/api/movies");
@@ -78,14 +80,16 @@ const HomePage = () => {
                 className="mb-2"
               />
 
-              <Select
-                options={genreOptions}
-                value={selectedGenres}
-                onChange={(selected) => setSelectedGenres(selected || [])}
-                isMulti
-                placeholder="Select genres..."
-                className="mb-2"
-              />
+              {isClient && (
+                <Select
+                  options={genreOptions}
+                  value={selectedGenres}
+                  onChange={(selected) => setSelectedGenres((selected || []) as { label: string; value: string }[])}
+                  isMulti
+                  placeholder="Select genres..."
+                  className="mb-2"
+                />
+              )}
 
               <Form.Control
                 type="date"
