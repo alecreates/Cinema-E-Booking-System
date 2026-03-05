@@ -1,0 +1,32 @@
+@startuml
+
+abstract class User {
+    - id: int
+    - firstName: string
+    - lastName: string
+    - email: string
+    - password: string
+}
+
+class Customer extends User {
+    - status: UserStatus
+}
+
+class Admin extends User {
+}
+
+class PaymentCard {
+    - cardNumber: string
+    - billingAddress: string
+    - expirationDate: Date
+}
+
+enum UserStatus {
+    ACTIVE
+    SUSPENDED
+    INACTIVE
+}
+
+Customer "1" -- "0..3" PaymentCard
+
+@enduml
