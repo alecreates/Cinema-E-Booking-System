@@ -27,6 +27,6 @@ enum UserStatus {
     INACTIVE
 }
 
-Customer "1" -- "0..3" PaymentCard
+Customer "1" *-- "0..3" PaymentCard
 
 @enduml
