@@ -2,7 +2,6 @@
 
 abstract class User {
     - id: int
-    - test
     - firstName: string
     - lastName: string
     - email: string
