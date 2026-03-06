@@ -13,12 +13,19 @@ class Customer extends User {
 }
 
 class Admin extends User {
+    - name:string
+    - userId: string
+    - password: string
 }
 
 class PaymentCard {
     - cardNumber: string
     - billingAddress: string
     - expirationDate: Date
+}
+
+class FavoriteMovies {
+    - movieName: string
 }
 
 enum UserStatus {
@@ -28,5 +35,6 @@ enum UserStatus {
 }
 
 Customer "1" *-- "0..3" PaymentCard
+Customer "0...*" *-- "1" FavoriteMovies
 
-@enduml
+@endum
