@@ -6,26 +6,31 @@ abstract class User {
     - lastName: string
     - email: string
     - password: string
+    + login()
+    + logout()
 }
 
 class Customer extends User {
     - status: UserStatus
+    + addPaymentCard()
+    + createBooking()
 }
 
 class Admin extends User {
-    - name:string
-    - userId: string
-    - password: string
+    + manageMovies()
+    + manageUsers()
 }
 
 class PaymentCard {
     - cardNumber: string
     - billingAddress: string
     - expirationDate: Date
+    + validateCard()
+    + updateCardInfo()
 }
 
 class FavoriteMovies {
-    - movieName: string
+    - movie: Movie
 }
 
 enum UserStatus {
@@ -34,7 +39,49 @@ enum UserStatus {
     INACTIVE
 }
 
-Customer "1" *-- "0..3" PaymentCard
-Customer "0...*" *-- "1" FavoriteMovies
+class Booking {
+    - bookingId: int
+    - total: int
+    - bookingDate: Date
+    + addTicket()
+    + applyPromotion()
+}
 
-@endum
+class Ticket {
+    - ticketId: int
+    - seatNumber: int
+    - type: UserTypes
+    + assignSeat()
+    + calculatePrice()
+}
+
+class Promotion {
+    - promoCode: string
+    - discount: double
+    + validatePromotion()
+    + applyDiscount()
+}
+
+class UserTypes {
+    - id: int
+    - type: string
+}
+
+class Show {
+}
+
+class ShowRoom {
+}
+
+class Movie {
+}
+
+Customer "1" *-- "0..3" PaymentCard
+Customer "1" -- "0..*" FavoriteMovies
+Customer "1" *-- "0..*" Booking
+
+Booking "1" -- "1..*" Ticket
+Booking "1" -- "0..1" Promotion
+Booking "*" -- PaymentCard
+
+@enduml
