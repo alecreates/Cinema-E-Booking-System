@@ -31,6 +31,8 @@ class PaymentCard {
 
 class FavoriteMovies {
     - movie: Movie
+    + addMovie()
+    + removeMovie()
 }
 
 enum UserStatus {
@@ -65,23 +67,57 @@ class Promotion {
 class UserTypes {
     - id: int
     - type: string
+    - price: double
+}
+
+class Theater {
+    - theaterId: int
+    - name: string
+    + addShowroom()
+    + removeShowroom()
 }
 
 class Show {
+    - showId: int
+    - showTime: DateTime
+    - duration: int
+    + scheduleShow()
+    + cancelShow()
 }
 
 class ShowRoom {
+    - showroomId: int
+    - seatCount: int
+    + getAvailableSeats()
+    + assignSeat()
 }
 
 class Movie {
+    - movieId: int
+    - title: string
+    - category: string
+    - duration: int
+    + updateMovie()
+    + getDetails()
 }
 
 Customer "1" *-- "0..3" PaymentCard
-Customer "1" -- "0..*" FavoriteMovies
+Customer "1" *-- "0..*" FavoriteMovies
 Customer "1" *-- "0..*" Booking
+FavoriteMovies "*" -- "1" Movie
 
-Booking "1" -- "1..*" Ticket
+Booking "1" *-- "1..*" Ticket
 Booking "1" -- "0..1" Promotion
 Booking "*" -- PaymentCard
+
+Theater "1" *-- "1..*" ShowRoom
+Movie "1" -- "0..*" Show
+ShowRoom "1" -- "0..*" Show
+Show "1" -- "1..*" Ticket
+Ticket "*" -- "1" UserTypes
+
+Admin -- Movie
+Admin -- Promotion
+Admin -- User
 
 @enduml
