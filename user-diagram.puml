@@ -17,8 +17,12 @@ class Customer extends User {
 }
 
 class Admin extends User {
-    + manageMovies()
+    + addMovie()
+    + updateMovie()
+    + deleteMovie()
     + manageUsers()
+    + managePromotions()
+    + manageTicketPrices()
 }
 
 class PaymentCard {
@@ -29,21 +33,21 @@ class PaymentCard {
     + updateCardInfo()
 }
 
-class FavoriteMovies {
-    - movie: Movie
-    + addMovie()
-    + removeMovie()
-}
-
 enum UserStatus {
     ACTIVE
     SUSPENDED
     INACTIVE
 }
 
+enum TicketType {
+    CHILD
+    ADULT
+    SENIOR
+}
+
 class Booking {
     - bookingId: int
-    - total: int
+    - total: double
     - bookingDate: Date
     + addTicket()
     + applyPromotion()
@@ -51,9 +55,7 @@ class Booking {
 
 class Ticket {
     - ticketId: int
-    - seatNumber: int
-    - type: UserTypes
-    + assignSeat()
+    - type: TicketType
     + calculatePrice()
 }
 
@@ -61,60 +63,53 @@ class Promotion {
     - promoCode: string
     - discount: double
     + validatePromotion()
-    + applyDiscount()
-}
-
-class UserTypes {
-    - id: int
-    - type: string
-    - price: double
-}
-
-class Theater {
-    - theaterId: int
-    - name: string
-    + addShowroom()
-    + removeShowroom()
 }
 
 class Show {
     - showId: int
     - showTime: DateTime
     - duration: int
-    + scheduleShow()
-    + cancelShow()
 }
 
 class ShowRoom {
     - showroomId: int
-    - seatCount: int
-    + getAvailableSeats()
-    + assignSeat()
+}
+
+class Seat {
+    - seatId: int
+    - row: int
+    - number: int
 }
 
 class Movie {
     - movieId: int
     - title: string
     - category: string
-    - duration: int
-    + updateMovie()
-    + getDetails()
+    - cast: string[]
+    - director: string
+    - producer: string
+    - reviews: string[]
+    - trailerImage: string
+    - trailerUrl: string
+    - rating: string
+    - description: string
 }
 
 Customer "1" *-- "0..3" PaymentCard
-Customer "1" *-- "0..*" FavoriteMovies
 Customer "1" *-- "0..*" Booking
-FavoriteMovies "*" -- "1" Movie
+Customer "0..*" -- "0..*" Movie : favorites
 
 Booking "1" *-- "1..*" Ticket
+Booking "*" --> "1" PaymentCard
 Booking "1" -- "0..1" Promotion
-Booking "*" -- PaymentCard
 
-Theater "1" *-- "1..*" ShowRoom
-Movie "1" -- "0..*" Show
-ShowRoom "1" -- "0..*" Show
-Show "1" -- "1..*" Ticket
-Ticket "*" -- "1" UserTypes
+Ticket "1" -- "1" Seat
+Ticket "*" --> "1" Show
+
+Movie "1" o-- "0..*" Show
+
+ShowRoom "1" o-- "0..*" Show
+ShowRoom "1" *-- "1..*" Seat
 
 Admin -- Movie
 Admin -- Promotion
