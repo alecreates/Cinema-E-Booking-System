@@ -57,28 +57,36 @@ class Ticket {
     - ticketId: int
     - type: TicketType
     + calculatePrice()
+    + assignSeat()
 }
 
 class Promotion {
     - promoCode: string
     - discount: double
     + validatePromotion()
+    + applyDiscount()
 }
 
 class Show {
     - showId: int
     - showTime: DateTime
     - duration: int
+    + getSoldTickets()
+    + getShowEndTime()
 }
 
 class ShowRoom {
     - showroomId: int
+    + getAvailableSeats()
+    + assignSeat()
 }
 
 class Seat {
     - seatId: int
     - row: int
     - number: int
+    + getSeatLabel()
+    + isAvailable()
 }
 
 class Movie {
@@ -93,11 +101,21 @@ class Movie {
     - trailerUrl: string
     - rating: string
     - description: string
+    + getDetails()
+    + updateDetails()
+}
+
+class FavoriteMovies {
+    - movie: Movie
+    + addMovie()
+    + removeMovie()
+    
 }
 
 Customer "1" *-- "0..3" PaymentCard
 Customer "1" *-- "0..*" Booking
-Customer "0..*" -- "0..*" Movie : favorites
+Customer "1" -- "0..*" FavoriteMovies
+Movie "1" -- "*" FavoriteMovies
 
 Booking "1" *-- "1..*" Ticket
 Booking "*" --> "1" PaymentCard
