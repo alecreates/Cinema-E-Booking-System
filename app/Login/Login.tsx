@@ -1,25 +1,52 @@
 "use client";
 
 import React, { useState } from "react";
-import { Container, Row, Col, Card, Form, Button } from "react-bootstrap";
+import { Container, Row, Col, Card, Form, Button, Alert } from "react-bootstrap";
 import { useRouter } from "next/navigation";
 
 const Login = () => {
-
     const router = useRouter();
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError("");
+        setLoading(true);
 
-        // TODO: handle login API call here
-        console.log("Logging in:", { email, password });
+        try {
+            const res = await fetch("/api/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    email,
+                    password,
+                    rememberMe,
+                }),
+            });
 
-        // after successful login, route to Home
-        router.push("/HomePage"); // <-- routes to app/home/page.tsx
+            const data = await res.json();
 
+            if (!res.ok) {
+                setError(data.message || "Login failed");
+                return;
+            }
+
+            console.log("Logged in user:", data.user);
+
+            router.push("/HomePage");
+        } catch (err) {
+            console.error("Login request failed:", err);
+            setError("Something went wrong. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -29,8 +56,9 @@ const Login = () => {
                     <Card className="p-4 shadow">
                         <h3 className="text-center mb-4">Log In</h3>
 
+                        {error && <Alert variant="danger">{error}</Alert>}
+
                         <Form onSubmit={handleSubmit}>
-                            {/* Email */}
                             <Form.Group className="mb-3" controlId="formEmail">
                                 <Form.Label>Email</Form.Label>
                                 <Form.Control
@@ -42,7 +70,6 @@ const Login = () => {
                                 />
                             </Form.Group>
 
-                            {/* Password */}
                             <Form.Group className="mb-2" controlId="formPassword">
                                 <Form.Label>Password</Form.Label>
                                 <Form.Control
@@ -54,7 +81,6 @@ const Login = () => {
                                 />
                             </Form.Group>
 
-                            {/* Remember me checkbox */}
                             <Form.Group className="mb-3" controlId="formRememberMe">
                                 <Form.Check
                                     type="checkbox"
@@ -64,20 +90,22 @@ const Login = () => {
                                 />
                             </Form.Group>
 
-                            {/* Forgot password */}
                             <div className="text-end mb-3">
                                 <a href="/ForgotPassword" style={{ fontSize: "0.9rem" }}>
                                     Forgot password?
                                 </a>
                             </div>
 
-                            {/* Login button */}
-                            <Button variant="primary" type="submit" className="w-100 mb-3">
-                                Log In
+                            <Button
+                                variant="primary"
+                                type="submit"
+                                className="w-100 mb-3"
+                                disabled={loading}
+                            >
+                                {loading ? "Logging In..." : "Log In"}
                             </Button>
                         </Form>
 
-                        {/* Sign up reference */}
                         <div className="text-center">
                             <span>Don't have an account? </span>
                             <a href="/Register">Create Account</a>

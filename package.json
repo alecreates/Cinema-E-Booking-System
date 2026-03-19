@@ -9,7 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "bootstrap": "^5.3.8",
+    "mongodb": "^7.1.0",
+    "mongoose": "^9.3.1",
     "mysql2": "^3.17.2",
     "next": "16.1.6",
     "react": "19.2.3",
@@ -19,6 +22,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
