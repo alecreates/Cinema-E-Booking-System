@@ -113,7 +113,7 @@ const Register = () => {
 
                         <div className="text-center">
                             <span>Already have an account? </span>
-                            <a href="/Login">Log In</a>
+                            <a href="/">Log In</a>
                         </div>
                     </Card>
                 </Col>
