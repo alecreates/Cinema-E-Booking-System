@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Container, Row, Col, Card, Form, Button } from "react-bootstrap";
 import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 
 const Login = () => {
 
@@ -18,6 +19,7 @@ const Login = () => {
         console.log("Logging in:", { email, password });
 
         // after successful login, route to Home
+        toast.success("Successfully logged in");
         router.push("/HomePage"); // <-- routes to app/home/page.tsx
 
     };
