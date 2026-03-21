@@ -5,9 +5,13 @@ import { Container, Row, Col, Card, Button, Form } from "react-bootstrap";
 import { useRouter } from "next/navigation";
 import { Movie } from "@/types/movie";
 import Select from "react-select";
+import { useUser } from "@/app/context/UserContext";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
 
 const HomePage = () => {
   const router = useRouter();
+  const { currentUser, setCurrentUser } = useUser();
+
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -47,6 +51,67 @@ const HomePage = () => {
   const nowShowing = filterMovies.filter(m => m.status === "now_showing");
   const comingSoon = filterMovies.filter(m => m.status === "coming_soon");
   const noResults = !loading && nowShowing.length === 0 && comingSoon.length === 0;
+
+  // --- FAVORITES FUNCTIONS ---
+  const isFavorite = (movieId: string) => {
+    return currentUser?.favorites?.includes(movieId);
+  };
+
+  const toggleFavorite = (movieId: string) => {
+    if (!currentUser) return; // Only logged-in users
+
+    let updatedFavorites = currentUser.favorites || [];
+    if (updatedFavorites.includes(movieId)) {
+      updatedFavorites = updatedFavorites.filter((id) => id !== movieId);
+    } else {
+      updatedFavorites.push(movieId);
+    }
+
+    setCurrentUser({ ...currentUser, favorites: updatedFavorites });
+  };
+
+  const renderMovieCard = (movie: Movie) => (
+    <Col xs={12} sm={6} md={4} lg={3} key={movie.id} className="mb-4">
+      <Card className="h-100 shadow-sm">
+        {/* Poster */}
+        <div
+          style={{
+            height: "180px",
+            backgroundImage: `url(${movie.posterUrl})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        />
+
+        <Card.Body className="d-flex flex-column">
+          {/* Movie Title + Favorite Heart */}
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <Card.Title className="mb-0">{movie.title}</Card.Title>
+            {currentUser && (
+              <span
+                style={{ cursor: "pointer", fontSize: "1.2rem", color: isFavorite(movie.id) ? "red" : "gray" }}
+                onClick={() => toggleFavorite(movie.id)}
+              >
+                {isFavorite(movie.id) ? <FaHeart /> : <FaRegHeart />}
+              </span>
+            )}
+          </div>
+
+          <Card.Text className="text-muted">
+            {movie.genre.join(", ")} • {movie.rating}
+          </Card.Text>
+
+          <Button
+            variant="primary"
+            className="mt-auto"
+            onClick={() => router.push(`/MovieDetails/${movie.id}`)}
+          >
+            View Movie Details
+          </Button>
+        </Card.Body>
+      </Card>
+    </Col>
+  );
 
   return (
     <Container fluid className="min-vh-100 bg-light py-4">
@@ -116,35 +181,7 @@ const HomePage = () => {
         <Row className="justify-content-center">
           <Col xs={11} md={10} lg={8}>
             <h5 className="mb-3">Now Showing</h5>
-            <Row>
-              {nowShowing.map((movie) => (
-                <Col xs={12} sm={6} md={4} lg={3} key={movie.id} className="mb-4">
-                  <Card className="h-100 shadow-sm">
-                    <div
-                      style={{
-                        height: "180px",
-                        backgroundImage: `url(${movie.posterUrl})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                      }}
-                    />
-                    <Card.Body className="d-flex flex-column">
-                      <Card.Title>{movie.title}</Card.Title>
-                      <Card.Text className="text-muted">
-                        {movie.genre.join(", ")} • {movie.rating}
-                      </Card.Text>
-                      <Button
-                        variant="primary"
-                        className="mt-auto"
-                        onClick={() => router.push(`/MovieDetails/${movie.id}`)}
-                      >
-                        View Movie Details
-                      </Button>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
+            <Row>{nowShowing.map(renderMovieCard)}</Row>
           </Col>
         </Row>
       )}
@@ -154,35 +191,7 @@ const HomePage = () => {
         <Row className="justify-content-center">
           <Col xs={11} md={10} lg={8}>
             <h5 className="mb-3">Coming Soon</h5>
-            <Row>
-              {comingSoon.map((movie) => (
-                <Col xs={12} sm={6} md={4} lg={3} key={movie.id} className="mb-4">
-                  <Card className="h-100 shadow-sm">
-                    <div
-                      style={{
-                        height: "180px",
-                        backgroundImage: `url(${movie.posterUrl})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                      }}
-                    />
-                    <Card.Body className="d-flex flex-column">
-                      <Card.Title>{movie.title}</Card.Title>
-                      <Card.Text className="text-muted">
-                        {movie.genre.join(", ")} • {movie.rating}
-                      </Card.Text>
-                      <Button
-                        variant="primary"
-                        className="mt-auto"
-                        onClick={() => router.push(`/MovieDetails/${movie.id}`)}
-                      >
-                        View Movie Details
-                      </Button>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
+            <Row>{comingSoon.map(renderMovieCard)}</Row>
           </Col>
         </Row>
       )}
