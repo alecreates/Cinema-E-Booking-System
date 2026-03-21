@@ -43,7 +43,7 @@ const Login = () => {
 
             console.log("Logged in user:", data.user);
 
-            setCurrentUser(data.user); // save logged-in user
+            setCurrentUser(data.user); // save logged-in user in user context
 
             router.push("/HomePage");
         } catch (err) {
