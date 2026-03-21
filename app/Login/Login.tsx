@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Container, Row, Col, Card, Form, Button, Alert } from "react-bootstrap";
 import { useRouter } from "next/navigation";
+import { useUser } from "@/app/context/UserContext";
 
 const Login = () => {
     const router = useRouter();
@@ -12,6 +13,8 @@ const Login = () => {
     const [rememberMe, setRememberMe] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+
+    const { setCurrentUser } = useUser();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -39,6 +42,8 @@ const Login = () => {
             }
 
             console.log("Logged in user:", data.user);
+
+            setCurrentUser(data.user); // save logged-in user
 
             router.push("/HomePage");
         } catch (err) {
