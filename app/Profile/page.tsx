@@ -9,7 +9,7 @@ import { useUser } from "@/app/context/UserContext";
 
 const Profile = () => {
     const router = useRouter();
-    const { currentUser } = useUser();
+    const { currentUser, setCurrentUser } = useUser();
 
     const [isEditing, setIsEditing] = useState(false);
     const [successMsg, setSuccessMsg] = useState("");
@@ -61,19 +61,47 @@ const Profile = () => {
         }));
     };
 
-    const handleSaveProfile = () => {
+    const handleSaveProfile = async () => {
         setErrorMsg("");
         setSuccessMsg("");
 
-        if (formData.newPassword && !formData.currentPassword) {
-            setErrorMsg("Please enter current password to change password.");
-            return;
-        }
+        try {
+            const res = await fetch("/api/users", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    id: currentUser?.id,
+                    name: formData.name,
+                    promoSub: formData.promoSub,
+                }),
+            });
 
-        // TODO: PUT /api/user/update
-        setUser(formData);
-        setIsEditing(false);
-        setSuccessMsg("Profile updated successfully!");
+            const data = await res.json();
+
+            if (!res.ok) {
+                setErrorMsg(data.message || "Failed to update profile");
+                return;
+            }
+
+            // ✅ update local state
+            setUser(data.user);
+
+            // 🔥 IMPORTANT: update context too
+            // (so entire app reflects changes)
+
+            if (currentUser) {
+                setCurrentUser(data.user);
+            }
+
+            setIsEditing(false);
+            setSuccessMsg("Profile updated successfully!");
+
+        } catch (err) {
+            console.error(err);
+            setErrorMsg("Something went wrong.");
+        }
     };
 
     // ---------- Payment Card Handlers ----------
