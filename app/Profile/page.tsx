@@ -86,31 +86,31 @@ const Profile = () => {
                 return;
             }
 
-            // update local state
             setUser(data.user);
-
-            // (so entire app reflects changes)
-
-            if (currentUser) {
-                setCurrentUser(data.user);
-            }
+            if (currentUser) setCurrentUser(data.user);
 
             setIsEditing(false);
             setSuccessMsg("Profile updated successfully!");
 
-            // ✅ Send email notification
-            try {
-                await emailjs.send(
-                    "service_nbvsrvg",
-                    "template_2tb6c16",
-                    {
-                        name: formData.name,
-                        promoSub: formData.promoSub ? "Subscribed" : "Not Subscribed",
-                        email: data.user.email // recipient
-                    }
-                );
-            } catch (emailErr) {
-                console.error("Email failed:", emailErr);
+            // Only send email if changes occurred
+            const hasProfileChanged =
+                formData.name !== currentUser?.name ||
+                formData.promoSub !== currentUser?.promoSub;
+
+            if (hasProfileChanged) {
+                try {
+                    await emailjs.send(
+                        "service_nbvsrvg", 
+                        "template_2tb6c16",
+                        {
+                            name: formData.name,
+                            promoSub: formData.promoSub ? "Subscribed" : "Unsubscribed",
+                            email: data.user.email,
+                        }
+                    );
+                } catch (emailErr) {
+                    console.error("Email failed:", emailErr);
+                }
             }
 
         } catch (err) {
