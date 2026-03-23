@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { UserProvider } from "./context/UserContext";
 import "./globals.css";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import EmailJSProvider from "./providers/EmailJSProvider";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,9 +31,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <UserProvider>
-          {children}
-        </UserProvider>
+        <EmailJSProvider> {/* global access to email provider */}
+          <UserProvider>
+            {children}
+          </UserProvider>
+        </EmailJSProvider>
       </body>
     </html>
   );

@@ -6,6 +6,7 @@ import { Container, Row, Col, Card, Button, Form, Alert } from "react-bootstrap"
 import { mockMovie } from "@/app/mock/movieMock";
 import { mockPaymentCards } from "@/app/mock/paymentMock";
 import { useUser } from "@/app/context/UserContext";
+import emailjs from "@emailjs/browser";
 
 const Profile = () => {
     const router = useRouter();
@@ -85,10 +86,9 @@ const Profile = () => {
                 return;
             }
 
-            // ✅ update local state
+            // update local state
             setUser(data.user);
 
-            // 🔥 IMPORTANT: update context too
             // (so entire app reflects changes)
 
             if (currentUser) {
@@ -97,6 +97,21 @@ const Profile = () => {
 
             setIsEditing(false);
             setSuccessMsg("Profile updated successfully!");
+
+            // ✅ Send email notification
+            try {
+                await emailjs.send(
+                    "service_nbvsrvg",
+                    "template_2tb6c16",
+                    {
+                        name: formData.name,
+                        promoSub: formData.promoSub ? "Subscribed" : "Not Subscribed",
+                        email: data.user.email // recipient
+                    }
+                );
+            } catch (emailErr) {
+                console.error("Email failed:", emailErr);
+            }
 
         } catch (err) {
             console.error(err);
