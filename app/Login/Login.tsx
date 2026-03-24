@@ -45,7 +45,12 @@ const Login = () => {
 
             setCurrentUser(data.user); // save logged-in user in user context
 
-            router.push("/HomePage");
+            if (data.user.userType === "admin") {
+                router.push("/AdminMenu");
+            } else {
+                router.push("/HomePage");
+            }
+
         } catch (err) {
             console.error("Login request failed:", err);
             setError("Something went wrong. Please try again.");
