@@ -12,12 +12,6 @@ const HomePage = () => {
   const router = useRouter();
   const { currentUser, setCurrentUser } = useUser();
 
-  useEffect(() => {
-  if (currentUser?.userType === "admin") {
-    router.push("/AdminMenu");
-  }
-}, [currentUser, router]);
-
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
