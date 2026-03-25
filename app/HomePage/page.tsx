@@ -9,8 +9,8 @@ import { useUser } from "@/app/context/UserContext";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 
 const HomePage = () => {
-  const router = useRouter();
-  const { currentUser, setCurrentUser } = useUser();
+  const router = useRouter(); 
+  const { currentUser, setCurrentUser, logout } = useUser();
 
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +35,12 @@ const HomePage = () => {
     };
     fetchMovies();
   }, []);
+
+  useEffect(() => {
+  if (currentUser === null) {
+    router.replace("/"); // send to login if user is not logged in
+  }
+}, [currentUser, router]);
 
   const allGenres = [...new Set(movies.flatMap((movie) => movie.genre))];
   const genreOptions = allGenres.map(g => ({ label: g, value: g }));
@@ -124,7 +130,10 @@ const HomePage = () => {
               <Button variant="outline-secondary" size="sm" className="me-2" onClick={() => router.push("/Profile")}>
                 Profile
               </Button>
-              <Button variant="outline-danger" size="sm" onClick={() => router.push("/")}>
+              <Button variant="outline-danger" size="sm" onClick={() => {
+                logout();
+                router.push("/");
+                }}>
                 Logout
               </Button>
             </div>

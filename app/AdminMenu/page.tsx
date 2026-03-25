@@ -1,11 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Card, Button } from "react-bootstrap";
 import { useRouter } from "next/navigation";
+import { useUser } from "@/app/context/UserContext";
 
 const AdminHome = () => {
-  const router = useRouter();
+  const router = useRouter();  
+  const { currentUser, setCurrentUser, logout } = useUser();
+
+useEffect(() => {
+  if (currentUser === null) {
+    router.replace("/"); // send to login if user is not logged in
+  }
+}, [currentUser, router]);
 
   return (
     <Container fluid className="min-vh-100 bg-light py-4">
@@ -17,7 +25,10 @@ const AdminHome = () => {
             <Button
               variant="outline-secondary"
               size="sm"
-              onClick={() => router.push("/Login")}
+              onClick={() => {
+                logout();
+                router.push("/");
+              }}
             >
               ← Back to Login
             </Button>
