@@ -3,6 +3,10 @@ import bcrypt from "bcrypt";
 import { dbConnect } from "../../../lib/mongodb";
 import User from "../../../types/User";
 
+import crypto from "crypto";
+
+
+
 export async function POST(req: Request) {
     try {
         const body = await req.json();
@@ -37,13 +41,17 @@ export async function POST(req: Request) {
 
         const passwordHash = await bcrypt.hash(password, 10);
 
+        // generate verification token for email identity verification
+        const verificationToken = crypto.randomBytes(32).toString("hex");
+
         const user = await User.create({
             userType: "customer",
             name: name.trim(),
             email: email.toLowerCase().trim(),
             passwordHash,
-            status: "active",
+            status: "inactive",
             promoSub: promoSub ?? false,
+            verificationToken
         });
 
         return NextResponse.json(
@@ -56,6 +64,7 @@ export async function POST(req: Request) {
                     email: user.email,
                     status: user.status,
                     promoSub: user.promoSub,
+                    verificationToken
                 },
             },
             { status: 201 }

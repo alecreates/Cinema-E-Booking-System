@@ -27,15 +27,19 @@ const UserSchema = new Schema(
     status: {
       type: String,
       enum: ["active", "inactive", "suspended"],
-      default: "active",
+      default: "inactive",
     },
     promoSub: {
       type: Boolean,
       default: false,
     },
     favoriteMovies: {
-  type: [String], // array of movie IDs
-  default: [],
+      type: [String], // array of movie IDs
+      default: [],
+    },
+    verificationToken: {
+      type: String,
+      required: true,
     }
   },
   { timestamps: true }

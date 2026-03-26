@@ -50,6 +50,7 @@ const Register = () => {
                     {
                         name: data.user.name,
                         email: data.user.email,
+                        verify_link: `http://localhost:3000/api/verify?token=${data.user.verificationToken}`,
                     }
                 );
             } catch (emailErr) {
