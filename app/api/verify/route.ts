@@ -6,6 +6,8 @@ export async function GET(req: NextRequest) {
     try {
         await dbConnect();
 
+        
+
         const { searchParams } = new URL(req.url);
         const token = searchParams.get("token");
 
