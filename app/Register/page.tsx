@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Container, Row, Col, Card, Form, Button, Alert } from "react-bootstrap";
 import { useRouter } from "next/navigation";
+import emailjs from "@emailjs/browser";
 
 const Register = () => {
     const router = useRouter();
@@ -40,6 +41,21 @@ const Register = () => {
             }
 
             console.log("Registered user:", data.user);
+
+            // send confirmation email
+            try {
+                await emailjs.send(
+                    "service_nbvsrvg", 
+                    "template_6tzqu1m",
+                    {
+                        name: data.user.name,
+                        email: data.user.email,
+                    }
+                );
+            } catch (emailErr) {
+                console.error("Email failed:", emailErr);
+            }
+
             router.push("/");
         } catch (err) {
             console.error("Register request failed:", err);
