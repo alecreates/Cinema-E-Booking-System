@@ -6,8 +6,6 @@ export async function GET(req: NextRequest) {
     try {
         await dbConnect();
 
-        
-
         const { searchParams } = new URL(req.url);
         const token = searchParams.get("token");
 
@@ -15,20 +13,19 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ message: "Invalid token" }, { status: 400 });
         }
 
-        const user = await User.findOne({ verificationToken: token });
-        console.log(token)
+        const user = await User.findOneAndUpdate(
+            { verificationToken: token },
+            { status: "active", verificationToken: null },
+            { new: true } // return the updated document
+        );
 
         if (!user) {
             return NextResponse.json({ message: "User not found" }, { status: 404 });
         }
 
-        user.status = "active";
-        user.verificationToken = null;
-        await user.save();
-
-        return NextResponse.redirect(new URL("/verified", req.url));
-
+        return NextResponse.redirect(new URL("/Verified", req.url));
     } catch (err) {
+        console.error("Verify error:", err);
         return NextResponse.json({ message: "Server error" }, { status: 500 });
     }
 }

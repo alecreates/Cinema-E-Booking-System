@@ -54,6 +54,8 @@ export async function POST(req: Request) {
             verificationToken
         });
 
+        console.log("Saved user in DB:", await User.findOne({ email: email.toLowerCase().trim() }));
+
         return NextResponse.json(
             {
                 message: "User registered successfully",
