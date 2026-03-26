@@ -1,43 +1,108 @@
-export type MovieStatus = "now_showing" | "coming_soon";
+import mongoose, { Schema, models, model } from "mongoose";
 
-export type Showtime = {
-    id: string;
-    date: string;      // "2026-02-13"
-    time: string;      // "19:30"
-    hall: string;
-};
+const ShowtimeSchema = new Schema(
+  {
+    id: { type: String, required: true, trim: true },
+    date: { type: String, required: true, trim: true },
+    time: { type: String, required: true, trim: true },
+    hall: { type: String, required: true, trim: true },
+  },
+  { _id: false }
+);
 
-export type Review = {
-    id: string;
-    author: string;
-    rating: number;    // 1–5 or 1–10
-    comment: string;
-    date: string;
-};
+const ReviewSchema = new Schema(
+  {
+    id: { type: String, required: true, trim: true },
+    author: { type: String, required: true, trim: true },
+    rating: { type: Number, required: true },
+    comment: { type: String, required: true, trim: true },
+    date: { type: String, required: true, trim: true },
+  },
+  { _id: false }
+);
 
-export type CastMember = {
-    name: string;
-    role: string;      // character name
-};
+const CastMemberSchema = new Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    role: { type: String, required: true, trim: true },
+  },
+  { _id: false }
+);
 
-export type Movie = {
-    status: MovieStatus;
-    id: string;
-    title: string;
-    description: string;
-    synopsis: string;
-    rating: string;
-    posterUrl: string;
-    trailerUrl: string;
-    duration: number;
-    genre: string[];
-    showtimes: Showtime[];
+const MovieSchema = new Schema(
+  {
+    status: {
+      type: String,
+      enum: ["now_showing", "coming_soon"],
+      required: true,
+    },
+    id: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    description: {
+      type: String,
+      default: "",
+    },
+    synopsis: {
+      type: String,
+      default: "",
+    },
+    rating: {
+      type: String,
+      default: "",
+    },
+    posterUrl: {
+      type: String,
+      default: "",
+    },
+    trailerUrl: {
+      type: String,
+      default: "",
+    },
+    duration: {
+      type: Number,
+      default: 0,
+    },
+    genre: {
+      type: [String],
+      default: [],
+    },
+    showtimes: {
+      type: [ShowtimeSchema],
+      default: [],
+    },
+    category: {
+      type: String,
+      default: "",
+    },
+    cast: {
+      type: [CastMemberSchema],
+      default: [],
+    },
+    director: {
+      type: String,
+      default: "",
+    },
+    producer: {
+      type: String,
+      default: "",
+    },
+    reviews: {
+      type: [ReviewSchema],
+      default: [],
+    },
+  },
+  { timestamps: true }
+);
 
-    category: string;      
+const Movie = models.Movie || model("Movie", MovieSchema);
 
-    cast: CastMember[];    
-    director: string;
-    producer: string
-
-    reviews: Review[];
-};
+export default Movie;
