@@ -9,6 +9,7 @@ export type UserType = {
     userType?: string;
     status?: string;
     promoSub?: boolean;
+    favoriteMovies?: String[];
 };
 
 type UserContextType = {

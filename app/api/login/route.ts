@@ -55,6 +55,7 @@ export async function POST(req: Request) {
                     email: user.email,
                     status: user.status,
                     promoSub: user.promoSub,
+                    favoriteMovies: user.favoriteMovies,
                 },
             },
             { status: 200 }

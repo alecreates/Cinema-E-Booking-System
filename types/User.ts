@@ -33,6 +33,10 @@ const UserSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    favoriteMovies: {
+  type: [String], // array of movie IDs
+  default: [],
+    }
   },
   { timestamps: true }
 );

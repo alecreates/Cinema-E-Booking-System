@@ -60,20 +60,35 @@ const HomePage = () => {
 
   // --- FAVORITES FUNCTIONS ---
   const isFavorite = (movieId: string) => {
-    return currentUser?.favorites?.includes(movieId);
+    return currentUser?.favoriteMovies?.includes(movieId);
   };
 
-  const toggleFavorite = (movieId: string) => {
-    if (!currentUser) return; // Only logged-in users
+  const toggleFavorite = async (movieId: string) => {
+    if (!currentUser) return;
 
-    let updatedFavorites = currentUser.favorites || [];
-    if (updatedFavorites.includes(movieId)) {
-      updatedFavorites = updatedFavorites.filter((id) => id !== movieId);
-    } else {
-      updatedFavorites.push(movieId);
-    }
+    try {
+      const res = await fetch("/api/users/favorites", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+        userId: currentUser.id,
+        movieId,
+      }),
+    });
 
-    setCurrentUser({ ...currentUser, favorites: updatedFavorites });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.message);
+
+    setCurrentUser({
+      ...currentUser,
+      favoriteMovies: data.favoriteMovies,
+    });
+  } catch (err) {
+    console.error("Failed to update favorites:", err);
+  }
   };
 
   const renderMovieCard = (movie: Movie) => (
