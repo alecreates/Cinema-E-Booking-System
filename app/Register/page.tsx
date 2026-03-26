@@ -2,35 +2,28 @@
 
 import React, { useState } from "react";
 import { Container, Row, Col, Card, Form, Button, Alert } from "react-bootstrap";
-import { useRouter } from "next/navigation";
 import emailjs from "@emailjs/browser";
 
 const Register = () => {
-    const router = useRouter();
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [promoSub, setPromoSub] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [successMsg, setSuccessMsg] = useState(""); // ✅ new state for success
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
+        setSuccessMsg("");
         setLoading(true);
 
         try {
             const res = await fetch("/api/register", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    name,
-                    email,
-                    password,
-                    promoSub,
-                }),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, email, password, promoSub }),
             });
 
             const data = await res.json();
@@ -45,7 +38,7 @@ const Register = () => {
             // send confirmation email
             try {
                 await emailjs.send(
-                    "service_nbvsrvg", 
+                    "service_nbvsrvg",
                     "template_r5uuwfc",
                     {
                         name: data.user.name,
@@ -57,7 +50,17 @@ const Register = () => {
                 console.error("Email failed:", emailErr);
             }
 
-            router.push("/");
+            //  Show success message instead of redirecting immediately
+            setSuccessMsg(
+                "🎉 Your account is registered! Please check your email to confirm your identity."
+            );
+
+            // optional: clear form fields
+            setName("");
+            setEmail("");
+            setPassword("");
+            setPromoSub(false);
+
         } catch (err) {
             console.error("Register request failed:", err);
             setError("Something went wrong. Please try again.");
@@ -70,10 +73,11 @@ const Register = () => {
         <Container fluid className="vh-100 d-flex align-items-center justify-content-center">
             <Row className="w-100 justify-content-center">
                 <Col xs={11} sm={8} md={6} lg={4}>
-                 <Card className="p-4 shadow">
+                    <Card className="p-4 shadow">
                         <h3 className="text-center mb-4">Create Account</h3>
 
-                     {error && <Alert variant="danger">{error}</Alert>}
+                        {error && <Alert variant="danger">{error}</Alert>}
+                        {successMsg && <Alert variant="success">{successMsg}</Alert>} {/* ✅ success box */}
 
                         <Form onSubmit={handleSubmit}>
                             <Form.Group className="mb-3" controlId="formName">
@@ -81,8 +85,8 @@ const Register = () => {
                                 <Form.Control
                                     type="text"
                                     placeholder="Enter name"
-                                   value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
                                     required
                                 />
                             </Form.Group>
@@ -120,7 +124,7 @@ const Register = () => {
 
                             <Button
                                 variant="primary"
-                              type="submit"
+                                type="submit"
                                 className="w-100 mb-3"
                                 disabled={loading}
                             >

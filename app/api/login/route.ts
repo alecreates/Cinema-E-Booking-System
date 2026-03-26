@@ -30,7 +30,7 @@ export async function POST(req: Request) {
 
         if (user.status !== "active") {
             return NextResponse.json(
-                { message: "Account is not active" },
+                { message: "Account is not active. Please verify your email." },
                 { status: 403 }
             );
         }
