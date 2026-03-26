@@ -46,7 +46,7 @@ const Register = () => {
             try {
                 await emailjs.send(
                     "service_nbvsrvg", 
-                    "template_6tzqu1m",
+                    "template_r5uuwfc",
                     {
                         name: data.user.name,
                         email: data.user.email,
