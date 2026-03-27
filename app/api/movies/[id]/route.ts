@@ -1,31 +1,34 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getMovieById } from "@/services/MovieService";
+import { NextResponse } from "next/server";
+import { dbConnect } from "../../../../lib/mongodb";
+import Movie from "../../../../models/Movie";
 
-export async function GET(req: NextRequest, context: { params: any }) {
-    try {
-        // UNWRAP params first
-        const params = await context.params;
-        const id = params.id as string;
+type RouteContext = {
+  params: Promise<{
+    id: string;
+  }>;
+};
 
+export async function GET(_req: Request, context: RouteContext) {
+  try {
+    const { id } = await context.params;
 
-        const movie = await getMovieById(id);
+    await dbConnect();
 
-        if (!movie) {
-            return NextResponse.json(
-                { success: false, message: "Movie not found" },
-                { status: 404 }
-            );
-        }
+    const movie = await Movie.findOne({ id }).lean();
 
-        return NextResponse.json({
-            success: true,
-            data: movie,
-        });
-    } catch (err) {
-        console.error(err);
-        return NextResponse.json(
-            { success: false, message: "Server error" },
-            { status: 500 }
-        );
+    if (!movie) {
+      return NextResponse.json(
+        { message: "Movie not found" },
+        { status: 404 }
+      );
     }
+
+    return NextResponse.json(movie, { status: 200 });
+  } catch (error) {
+    console.error("GET /api/movies/[id] error:", error);
+    return NextResponse.json(
+      { message: "Failed to fetch movie" },
+      { status: 500 }
+    );
+  }
 }

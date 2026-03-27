@@ -26,7 +26,7 @@ const HomePage = () => {
         const res = await fetch("/api/movies");
         if (!res.ok) throw new Error("Failed to fetch movies");
         const json = await res.json();
-        setMovies(json.data);
+        setMovies(json);
       } catch (err) {
         console.error("Error fetching movies:", err);
       } finally {

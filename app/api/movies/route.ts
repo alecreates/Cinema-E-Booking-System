@@ -1,36 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-import * as MovieService from "@/services/MovieService";
+import { NextResponse } from "next/server";
+import { dbConnect } from "../../../lib/mongodb";
+import Movie from "../../../models/Movie";
 
-/**
- * GET /api/movies
- * Fetch all movies
- */
-export async function GET(req: NextRequest) {
+export async function GET() {
+  try {
+    await dbConnect();
 
-   const movies = await MovieService.getAllMovies();
+    const movies = await Movie.find().sort({ id: 1 }).lean();
 
-    return NextResponse.json({
-      success: true,
-      message: "Movies endpoint is live",
-      data: movies,
-    });
+    return NextResponse.json(movies, { status: 200 });
+  } catch (error) {
+    console.error("GET /api/movies error:", error);
+    return NextResponse.json(
+      { message: "Failed to fetch movies" },
+      { status: 500 }
+    );
   }
-
-/**
- * POST /api/movies
- * Create a movie
- */
-export async function POST(req: NextRequest) {
-    const body = await req.json();
-
-    const newMovie = await MovieService.createMovie(body);
-  
-    return NextResponse.json({
-      success: true,
-      message: "Create movie endpoint is live",
-      data: newMovie,
-    });
-  }
-
-
-
+}
