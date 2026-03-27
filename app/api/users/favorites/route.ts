@@ -14,11 +14,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    let updatedFavorites = user.favoriteMovies || [];
+    let updatedFavorites = (user.favoriteMovies || [])
+      .filter((id: any) => id) // remove nulls
+      .map((id: any) => id.toString());
 
     if (updatedFavorites.includes(movieId)) {
       // remove
-      updatedFavorites = updatedFavorites.filter((id: string) => id !== movieId);
+      updatedFavorites = updatedFavorites.filter((id) => id !== movieId);
     } else {
       // add
       updatedFavorites.push(movieId);

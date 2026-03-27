@@ -39,8 +39,10 @@ const UserSchema = new Schema(
     },
     verificationToken: {
       type: String,
-      required: true,
-    }
+      required: function () {
+        return this.status !== "active";
+      },
+    },
   },
   { timestamps: true }
 );

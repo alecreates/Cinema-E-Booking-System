@@ -11,7 +11,7 @@ import { FaHeart, FaRegHeart } from "react-icons/fa";
 const HomePage = () => {
   const router = useRouter(); 
   const { currentUser, setCurrentUser, logout } = useUser();
-
+  
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -26,7 +26,7 @@ const HomePage = () => {
         const res = await fetch("/api/movies");
         if (!res.ok) throw new Error("Failed to fetch movies");
         const json = await res.json();
-        setMovies(json);
+        setMovies(json.data || json);
       } catch (err) {
         console.error("Error fetching movies:", err);
       } finally {
@@ -59,11 +59,11 @@ const HomePage = () => {
   const noResults = !loading && nowShowing.length === 0 && comingSoon.length === 0;
 
   // --- FAVORITES FUNCTIONS ---
-  const isFavorite = (movieId: string) => {
-    return currentUser?.favoriteMovies?.includes(movieId);
+  const isFavorite = (movie_Id: string) => {
+    return currentUser?.favoriteMovies?.includes(movie_Id);
   };
 
-  const toggleFavorite = async (movieId: string) => {
+  const toggleFavorite = async (movie_Id: string) => {
     if (!currentUser) return;
 
     try {
@@ -73,9 +73,9 @@ const HomePage = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-        userId: currentUser.id,
-        movieId,
-      }),
+          userId: currentUser.id,
+          movieId: movie_Id, 
+        }),
     });
 
     const data = await res.json();
