@@ -46,6 +46,24 @@ const Profile = () => {
     newPassword: "",
   });
 
+  const sendUpdateEmail = async (message: string) => {
+    if (!currentUser?.email) return;
+
+    try {
+      await emailjs.send(
+        "service_nbvsrvg",
+        "template_2tb6c16",
+        {
+          name: currentUser.name,
+          email: currentUser.email,
+          message, // add this field in EmailJS template
+        }
+      );
+    } catch (err) {
+      console.error("Email failed:", err);
+    }
+  };
+
   // fetch payment card information
 
   useEffect(() => {
@@ -156,24 +174,16 @@ const Profile = () => {
       setSuccessMsg("Profile updated successfully!");
 
       // Only send email if changes occurred
-      const hasProfileChanged =
-        formData.name !== currentUser?.name ||
-        formData.promoSub !== currentUser?.promoSub;
+      const nameChanged = formData.name !== currentUser?.name;
+      const promoChanged = formData.promoSub !== currentUser?.promoSub;
+      const passwordChanged = formData.newPassword.length > 0;
 
-      if (hasProfileChanged) {
-        try {
-          await emailjs.send(
-            "service_nbvsrvg",
-            "template_2tb6c16",
-            {
-              name: formData.name,
-              promoSub: formData.promoSub ? "Subscribed" : "Unsubscribed",
-              email: data.user.email,
-            }
-          );
-        } catch (emailErr) {
-          console.error("Email failed:", emailErr);
-        }
+      if (nameChanged || promoChanged || passwordChanged) {
+        await sendUpdateEmail(
+          passwordChanged
+            ? "Your password has been updated."
+            : "Your profile information has been updated."
+        );
       }
 
     } catch (err) {
@@ -240,6 +250,9 @@ const Profile = () => {
       await fetchCards();
 
       setEditingCard(null);
+
+      await sendUpdateEmail("Your payment card details were updated.");
+
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || "Failed to update card");
@@ -297,6 +310,8 @@ const Profile = () => {
       await fetchCards();
 
       setShowCardModal(false);
+      await sendUpdateEmail("A new payment card was added to your account.");
+
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || "Failed to create card");
@@ -321,6 +336,8 @@ const Profile = () => {
       if (!res.ok) throw new Error(data.message);
 
       setCurrentUser({ ...currentUser, favoriteMovies: data.favoriteMovies });
+
+      await sendUpdateEmail("A payment card was removed from your account.");
     } catch (err) {
       console.error("Failed to remove favorite:", err);
     }
