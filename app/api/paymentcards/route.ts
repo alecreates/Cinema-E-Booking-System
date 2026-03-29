@@ -43,3 +43,29 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+
+export async function GET(req: NextRequest) {
+  try {
+    await dbConnect();
+
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId");
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Missing userId" },
+        { status: 400 }
+      );
+    }
+
+    const cards = await PaymentCard.find({ customerId: userId });
+
+    return NextResponse.json(cards, { status: 200 });
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Failed to fetch payment cards" },
+      { status: 500 }
+    );
+  }
+}
