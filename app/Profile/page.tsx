@@ -137,6 +137,8 @@ const Profile = () => {
           id: currentUser?.id,
           name: formData.name,
           promoSub: formData.promoSub,
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword,
         }),
       });
 

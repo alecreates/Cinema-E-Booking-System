@@ -1,12 +1,12 @@
+import bcrypt from "bcrypt";
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import User from "@/models/User";
 
-// edit user info here (profile updates)
 export async function PUT(req: Request) {
     try {
         const body = await req.json();
-        const { id, name, promoSub } = body;
+        const { id, name, promoSub, currentPassword, newPassword } = body;
 
         if (!id) {
             return NextResponse.json(
@@ -17,39 +17,61 @@ export async function PUT(req: Request) {
 
         await dbConnect();
 
-        // Only allow specific fields to update
-        const updatedUser = await User.findByIdAndUpdate(
-            id,
-            {
-                name,
-                promoSub,
-                updatedAt: new Date(),
-            },
-            { new: true }
-        );
-
-        if (!updatedUser) {
+        const user = await User.findById(id);
+        if (!user) {
             return NextResponse.json(
                 { message: "User not found" },
                 { status: 404 }
             );
         }
 
-        // 🔔 (Later) send email notification here
+        // ----------------------------
+        // PASSWORD CHANGE LOGIC
+        // ----------------------------
+        if (newPassword) {
+            if (!currentPassword) {
+                return NextResponse.json(
+                    { message: "Current password required" },
+                    { status: 400 }
+                );
+            }
 
-        return NextResponse.json(
-            {
-                message: "Profile updated successfully",
-                user: {
-                    id: updatedUser._id,
-                    name: updatedUser.name,
-                    email: updatedUser.email,
-                    promoSub: updatedUser.promoSub,
-                },
+            // compare with passwordHash (NOT password)
+            const isMatch = await bcrypt.compare(
+                currentPassword,
+                user.passwordHash
+            );
+
+            if (!isMatch) {
+                return NextResponse.json(
+                    { message: "Current password is incorrect" },
+                    { status: 401 }
+                );
+            }
+
+            // hash new password
+            const hashed = await bcrypt.hash(newPassword, 10);
+
+            user.passwordHash = hashed;
+        }
+
+        // ----------------------------
+        // PROFILE UPDATES
+        // ----------------------------
+        if (name) user.name = name;
+        if (promoSub !== undefined) user.promoSub = promoSub;
+
+        await user.save();
+
+        return NextResponse.json({
+            message: "Profile updated successfully",
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                promoSub: user.promoSub,
             },
-            { status: 200 }
-        );
-
+        });
     } catch (error) {
         console.error("Update profile error:", error);
         return NextResponse.json(
