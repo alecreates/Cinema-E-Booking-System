@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import PaymentCard from "@/models/PaymentCard";
 
+import { encrypt, decrypt } from "@/lib/encryption";
+
 export async function POST(req: NextRequest) {
   try {
     await dbConnect();
@@ -16,10 +18,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 🔥 STEP 1: count existing cards
     const cardCount = await PaymentCard.countDocuments({ customerId });
 
-    // step 2: enforce limit
     if (cardCount >= 3) {
       return NextResponse.json(
         { error: "Maximum of 3 payment cards allowed" },
@@ -27,10 +27,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ✅ STEP 3: create card
+    // 🔒 ENCRYPT CARD NUMBER
+    const encryptedCardNumber = encrypt(cardNumber);
+
     const newCard = await PaymentCard.create({
       customerId,
-      cardNumber,
+      cardNumber: encryptedCardNumber,
       billingAddress,
       expirationDate,
     });
@@ -43,7 +45,6 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
 
 export async function GET(req: NextRequest) {
   try {
@@ -61,7 +62,17 @@ export async function GET(req: NextRequest) {
 
     const cards = await PaymentCard.find({ customerId: userId });
 
-    return NextResponse.json(cards, { status: 200 });
+    // 🔓 DECRYPT + MASK
+    const safeCards = cards.map((card) => {
+      const decrypted = decrypt(card.cardNumber);
+
+      return {
+        ...card.toObject(),
+        cardNumber: "**** **** **** " + decrypted.slice(-4), // 👈 best practice
+      };
+    });
+
+    return NextResponse.json(safeCards, { status: 200 });
   } catch (err) {
     return NextResponse.json(
       { error: "Failed to fetch payment cards" },
