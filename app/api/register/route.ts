@@ -51,7 +51,8 @@ export async function POST(req: Request) {
             passwordHash,
             status: "inactive",
             promoSub: promoSub ?? false,
-            verificationToken
+            verificationToken,
+            address: "",
         });
 
         console.log("Saved user in DB:", await User.findOne({ email: email.toLowerCase().trim() }));
@@ -66,7 +67,8 @@ export async function POST(req: Request) {
                     email: user.email,
                     status: user.status,
                     promoSub: user.promoSub,
-                    verificationToken
+                    verificationToken,
+                    address: user.address
                 },
             },
             { status: 201 }

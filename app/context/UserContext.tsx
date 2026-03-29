@@ -11,6 +11,7 @@ export type UserType = {
     promoSub?: boolean;
     favoriteMovies?: string[];
     verificationToken: string;
+    address: string;
 };
 
 type UserContextType = {

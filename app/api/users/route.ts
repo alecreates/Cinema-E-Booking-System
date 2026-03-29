@@ -6,7 +6,7 @@ import User from "@/models/User";
 export async function PUT(req: Request) {
     try {
         const body = await req.json();
-        const { id, name, promoSub, currentPassword, newPassword } = body;
+        const { id, name, promoSub, currentPassword, newPassword, address } = body;
 
         if (!id) {
             return NextResponse.json(
@@ -60,6 +60,7 @@ export async function PUT(req: Request) {
         // ----------------------------
         if (name) user.name = name;
         if (promoSub !== undefined) user.promoSub = promoSub;
+        if (address !== undefined) user.address = address;
 
         await user.save();
 
@@ -70,6 +71,7 @@ export async function PUT(req: Request) {
                 name: user.name,
                 email: user.email,
                 promoSub: user.promoSub,
+                address: user.address
             },
         });
     } catch (error) {

@@ -36,6 +36,7 @@ const Profile = () => {
     name: "",
     email: "",
     promoSub: false,
+    address: ""
   });
 
   const [formData, setFormData] = useState({
@@ -44,6 +45,7 @@ const Profile = () => {
     promoSub: false,
     currentPassword: "",
     newPassword: "",
+    address: ""
   });
 
   const sendUpdateEmail = async (message: string) => {
@@ -96,6 +98,7 @@ const Profile = () => {
         name: currentUser.name,
         email: currentUser.email,
         promoSub: currentUser.promoSub || false,
+        address: currentUser.address
       });
       setFormData({
         name: currentUser.name,
@@ -103,6 +106,7 @@ const Profile = () => {
         promoSub: currentUser.promoSub || false,
         currentPassword: "",
         newPassword: "",
+        address: ""
       });
     }
   }, [currentUser]);
@@ -157,6 +161,7 @@ const Profile = () => {
           promoSub: formData.promoSub,
           currentPassword: formData.currentPassword,
           newPassword: formData.newPassword,
+          address: formData.address
         }),
       });
 
@@ -384,6 +389,16 @@ const Profile = () => {
                 <Form.Control value={user.email} disabled />
               </Form.Group>
 
+              <Form.Group className="mb-3">
+                <Form.Label>Address</Form.Label>
+                <Form.Control
+                  name="address"
+                  value={isEditing ? formData.address : user.address}
+                  onChange={handleUserChange}
+                  disabled={!isEditing}
+                />
+              </Form.Group>
+
               <Form.Check
                 className="mb-3"
                 label="Subscribe to promotions"
@@ -493,6 +508,7 @@ const Profile = () => {
                         name="cardNumber"
                         placeholder="Card Number"
                         value={editingCard.cardNumber}
+                        required
                         onChange={handleEditCardChange}
                       />
 
@@ -501,6 +517,7 @@ const Profile = () => {
                         name="expirationDate"
                         placeholder="MM/YY"
                         value={editingCard.expirationDate}
+                        required
                         onChange={handleEditCardChange}
                       />
 
@@ -509,6 +526,7 @@ const Profile = () => {
                         name="billingAddress"
                         placeholder="Billing Address"
                         value={editingCard.billingAddress}
+                        required
                         onChange={handleEditCardChange}
                       />
 
