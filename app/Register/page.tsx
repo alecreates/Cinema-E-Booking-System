@@ -9,6 +9,7 @@ const Register = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [promoSub, setPromoSub] = useState(false);
+    const [address, setAddress] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [successMsg, setSuccessMsg] = useState(""); // ✅ new state for success
@@ -23,7 +24,7 @@ const Register = () => {
             const res = await fetch("/api/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, email, password, promoSub }),
+                body: JSON.stringify({ name, email, password, promoSub, address }),
             });
 
             const data = await res.json();
@@ -57,6 +58,7 @@ const Register = () => {
 
             // optional: clear form fields
             setName("");
+            setAddress("");
             setEmail("");
             setPassword("");
             setPromoSub(false);
@@ -87,6 +89,17 @@ const Register = () => {
                                     placeholder="Enter name"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
+                                    required
+                                />
+                            </Form.Group>
+
+                            <Form.Group className="mb-3" controlId="formAddress">
+                                <Form.Label>Address <span className="text-danger">*</span></Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    placeholder="Enter address"
+                                    value={address}
+                                    onChange={(e) => setAddress(e.target.value)}
                                     required
                                 />
                             </Form.Group>

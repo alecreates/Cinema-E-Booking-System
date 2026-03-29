@@ -10,7 +10,7 @@ import crypto from "crypto";
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, email, password, promoSub } = body;
+        const { name, email, password, promoSub, address } = body;
 
         if (!name || !email || !password) {
             return NextResponse.json(
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
             status: "inactive",
             promoSub: promoSub ?? false,
             verificationToken,
-            address: "",
+            address: address.trim(),
         });
 
         console.log("Saved user in DB:", await User.findOne({ email: email.toLowerCase().trim() }));
