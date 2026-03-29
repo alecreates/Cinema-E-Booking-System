@@ -18,7 +18,7 @@ const PaymentCardSchema = new Schema(
             required: true
         },
         expirationDate:{
-            type: Date,
+            type: String,
             required: true
         }
 

@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
 
     const cards = await PaymentCard.find({ customerId: userId });
 
-    // 🔓 DECRYPT + MASK
+    // DECRYPT + MASK
     const safeCards = cards.map((card) => {
       const decrypted = decrypt(card.cardNumber);
 
