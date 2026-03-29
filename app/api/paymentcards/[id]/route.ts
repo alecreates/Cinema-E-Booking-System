@@ -9,12 +9,9 @@ export async function DELETE(
     await dbConnect();
 
     const { params } = context;
-    const { id } = await params; // ✅ THIS IS THE FIX
-
-    console.log("ID from URL:", id);
+    const { id } = await params; 
 
     const exists = await PaymentCard.findById(id);
-    console.log("Exists before delete:", exists);
 
     const deleted = await PaymentCard.findByIdAndDelete(id);
 
@@ -29,4 +26,32 @@ export async function DELETE(
         { message: "Payment card deleted successfully" },
         { status: 200 }
     );
+}
+
+export async function PUT(req: NextRequest, { params }: any) {
+    try {
+        await dbConnect();
+
+        const body = await req.json();
+
+        const updated = await PaymentCard.findByIdAndUpdate(
+            params.id,
+            body,
+            { new: true }
+        );
+
+        if (!updated) {
+            return NextResponse.json(
+                { error: "Card not found" },
+                { status: 404 }
+            );
+        }
+
+        return NextResponse.json(updated);
+    } catch (err) {
+        return NextResponse.json(
+            { error: "Failed to update card" },
+            { status: 500 }
+        );
+    }
 }

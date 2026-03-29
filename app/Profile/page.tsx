@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Button, Form, Alert } from "react-bootstrap";
+import { Container, Row, Col, Card, Button, Form, Alert, Modal } from "react-bootstrap";
 import { useUser } from "@/app/context/UserContext";
 import emailjs from "@emailjs/browser";
 import { Movie } from "@/types/movie";
@@ -19,8 +19,18 @@ const Profile = () => {
   // favorites from db
   const [allMovies, setAllMovies] = useState<Movie[]>([]);
   const [favoriteMovies, setFavoriteMovies] = useState<Movie[]>([]);
-  const [cards, setCards] = useState(mockPaymentCards);
+
+  const [cards, setCards] = useState<any[]>([]);
+  const [loadingCards, setLoadingCards] = useState(false);
+
   const [editingCard, setEditingCard] = useState<any | null>(null);
+
+  const [showCardModal, setShowCardModal] = useState(false);
+  const [newCard, setNewCard] = useState({
+    cardNumber: "",
+    expirationDate: "",
+    billingAddress: "",
+  });
 
   const [user, setUser] = useState({
     name: "",
@@ -36,7 +46,32 @@ const Profile = () => {
     newPassword: "",
   });
 
-  // Initialize from context
+  // fetch payment card information
+
+  useEffect(() => {
+    const fetchCards = async () => {
+      if (!currentUser?.id) return;
+
+      try {
+        setLoadingCards(true);
+
+        const res = await fetch(`/api/paymentcards?userId=${currentUser.id}`);
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error);
+
+        setCards(data);
+      } catch (err) {
+        console.error("Failed to load cards:", err);
+      } finally {
+        setLoadingCards(false);
+      }
+    };
+
+    fetchCards();
+  }, [currentUser]);
+
+  // Initialize user info from context
   useEffect(() => {
     if (currentUser) {
       setUser({
@@ -118,7 +153,7 @@ const Profile = () => {
       setIsEditing(false);
       setSuccessMsg("Profile updated successfully!");
 
-        // Only send email if changes occurred
+      // Only send email if changes occurred
       const hasProfileChanged =
         formData.name !== currentUser?.name ||
         formData.promoSub !== currentUser?.promoSub;
@@ -146,36 +181,110 @@ const Profile = () => {
   };
 
   // ---------- Payment Card Handlers ----------
-  const startEditCard = (card: any) => setEditingCard({ ...card });
 
-  const handleCardChange = (e: any) => {
-    const { name, value } = e.target;
-    setEditingCard((prev: any) => ({ ...prev, [name]: value }));
+  const fetchCards = async () => {
+    setLoadingCards(true);
+
+    const res = await fetch(`/api/paymentcards?userId=${currentUser.id}`);
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error);
+
+    setCards(data);
   };
 
-  const saveCard = () => {
-    // TODO: PUT /api/cards/:id (encrypt card)
-    setCards((prev) =>
-      prev.map((c) => (c.id === editingCard.id ? editingCard : c))
-    );
-    setEditingCard(null);
+  const startEditCard = (card: any) => {
+    setEditingCard({ ...card });
+  };
+
+  const handleEditCardChange = (e: any) => {
+    const { name, value } = e.target;
+
+    setEditingCard((prev: any) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const saveCard = async () => {
+    try {
+      if (!editingCard?._id) return;
+
+      const res = await fetch(`/api/paymentcards/${editingCard._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cardNumber: editingCard.cardNumber,
+          billingAddress: editingCard.billingAddress,
+          expirationDate: editingCard.expirationDate,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setEditingCard(null);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.message || "Failed to update card");
+    }
   };
 
   const cancelEditCard = () => setEditingCard(null);
 
-  const removeCard = (id: string) => setCards((prev) => prev.filter((c) => c.id !== id));
+  const removeCard = async (id: string) => {
+    try {
+      const res = await fetch(`/api/paymentcards/${id}`, {
+        method: "DELETE",
+      });
 
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setCards((prev) => prev.filter((c) => c._id !== id));
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.message || "Failed to delete card");
+    }
+  };
+
+  // ADD CARD (opens empty editor)
   const addCard = () => {
     if (cards.length >= 3) {
       setErrorMsg("Maximum of 3 payment cards allowed.");
       return;
     }
-    setEditingCard({
-      id: Date.now().toString(),
+
+    setNewCard({
       cardNumber: "",
-      expiration: "",
+      expirationDate: "",
       billingAddress: "",
     });
+
+    setShowCardModal(true);
+  };
+
+  const handleCreateCard = async () => {
+    try {
+      const res = await fetch("/api/paymentcards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerId: currentUser?.id,
+          ...newCard,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      await fetchCards();
+
+      setShowCardModal(false);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.message || "Failed to create card");
+    }
   };
 
   // favorites handlers
@@ -342,8 +451,8 @@ const Profile = () => {
               </div>
 
               {cards.map((card) => (
-                <Card key={card.id} className="p-3 mb-2 shadow-sm">
-                  {editingCard?.id === card.id ? (
+                <Card key={card._id} className="p-3 mb-2 shadow-sm">
+                  {editingCard?.id === card._id ? (
                     <>
                       <Form.Control
                         className="mb-2"
@@ -356,7 +465,7 @@ const Profile = () => {
                         className="mb-2"
                         name="expiration"
                         placeholder="MM/YY"
-                        value={editingCard.expiration}
+                        value={editingCard.expirationDate}
                         onChange={handleCardChange}
                       />
                       <Form.Control
@@ -375,14 +484,14 @@ const Profile = () => {
                     <div className="d-flex justify-content-between align-items-center">
                       <div>
                         <strong>{card.cardNumber}</strong>
-                        <div className="text-muted">Exp: {card.expiration}</div>
+                        <div className="text-muted">Exp: {card.expirationDate}</div>
                         <div className="text-muted" style={{ fontSize: "0.8rem" }}>
                           {card.billingAddress}
                         </div>
                       </div>
                       <div className="d-flex gap-2">
                         <Button size="sm" onClick={() => startEditCard(card)}>✏️</Button>
-                        <Button size="sm" variant="outline-danger" onClick={() => removeCard(card.id)}>Remove</Button>
+                        <Button size="sm" variant="outline-danger" onClick={() => removeCard(card._id)}>Remove</Button>
                       </div>
                     </div>
                   )}
@@ -392,6 +501,56 @@ const Profile = () => {
           </Card>
         </Col>
       </Row>
+
+      <Modal show={showCardModal} onHide={() => setShowCardModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Add Payment Card</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          <Form.Group className="mb-2">
+            <Form.Control
+              name="cardNumber"
+              placeholder="Card Number"
+              value={newCard.cardNumber}
+              onChange={(e) =>
+                setNewCard({ ...newCard, cardNumber: e.target.value })
+              }
+            />
+          </Form.Group>
+
+          <Form.Group className="mb-2">
+            <Form.Control
+              name="expirationDate"
+              placeholder="MM/YY"
+              value={newCard.expirationDate}
+              onChange={(e) =>
+                setNewCard({ ...newCard, expirationDate: e.target.value })
+              }
+            />
+          </Form.Group>
+
+          <Form.Group>
+            <Form.Control
+              name="billingAddress"
+              placeholder="Billing Address"
+              value={newCard.billingAddress}
+              onChange={(e) =>
+                setNewCard({ ...newCard, billingAddress: e.target.value })
+              }
+            />
+          </Form.Group>
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowCardModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleCreateCard}>
+            Save Card
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };
