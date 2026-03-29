@@ -11,7 +11,7 @@ const BookingSchema = new Schema (
         promotionId:{
             type: Schema.Types.ObjectId,
             ref: 'Promotion',
-            required: true
+            required: false
         },
         paymentCardId:{
             type: Schema.Types.ObjectId,
