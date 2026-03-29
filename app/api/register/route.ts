@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import { dbConnect } from "../../../lib/mongodb";
-import User from "../../../types/User";
+import User from "../../../models/User";
 
 import crypto from "crypto";
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
-import User from "@/types/User";
+import User from "@/models/User";
 
 // edit user info here (profile updates)
 export async function PUT(req: Request) {
