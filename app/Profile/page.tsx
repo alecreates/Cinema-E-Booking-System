@@ -183,18 +183,29 @@ const Profile = () => {
   // ---------- Payment Card Handlers ----------
 
   const fetchCards = async () => {
+    if (!currentUser?.id) return;
+
     setLoadingCards(true);
 
-    const res = await fetch(`/api/paymentcards?userId=${currentUser.id}`);
-    const data = await res.json();
+    try {
+      const res = await fetch(`/api/paymentcards?userId=${currentUser.id}`);
+      const data = await res.json();
 
-    if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error);
 
-    setCards(data);
+      setCards(data);
+    } finally {
+      setLoadingCards(false);
+    }
   };
 
   const startEditCard = (card: any) => {
-    setEditingCard({ ...card });
+    setEditingCard({
+      _id: card._id,
+      cardNumber: card.cardNumber, // FULL VALUE
+      expirationDate: card.expirationDate,
+      billingAddress: card.billingAddress,
+    });
   };
 
   const handleEditCardChange = (e: any) => {
@@ -222,6 +233,9 @@ const Profile = () => {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
+
+      // refresh UI after update
+      await fetchCards();
 
       setEditingCard(null);
     } catch (err: any) {
@@ -452,48 +466,72 @@ const Profile = () => {
 
               {cards.map((card) => (
                 <Card key={card._id} className="p-3 mb-2 shadow-sm">
-                  {editingCard?.id === card._id ? (
+                  {editingCard?._id === card._id ? (
                     <>
+                      {/* EDIT MODE */}
                       <Form.Control
                         className="mb-2"
                         name="cardNumber"
                         placeholder="Card Number"
                         value={editingCard.cardNumber}
-                        onChange={handleCardChange}
+                        onChange={handleEditCardChange}
                       />
+
                       <Form.Control
                         className="mb-2"
-                        name="expiration"
+                        name="expirationDate"
                         placeholder="MM/YY"
                         value={editingCard.expirationDate}
-                        onChange={handleCardChange}
+                        onChange={handleEditCardChange}
                       />
+
                       <Form.Control
                         className="mb-2"
                         name="billingAddress"
                         placeholder="Billing Address"
                         value={editingCard.billingAddress}
-                        onChange={handleCardChange}
+                        onChange={handleEditCardChange}
                       />
+
                       <div className="d-flex gap-2">
-                        <Button size="sm" variant="success" onClick={saveCard}>Save</Button>
-                        <Button size="sm" variant="secondary" onClick={cancelEditCard}>Cancel</Button>
+                        <Button size="sm" variant="success" onClick={saveCard}>
+                          Save
+                        </Button>
+                        <Button size="sm" variant="secondary" onClick={cancelEditCard}>
+                          Cancel
+                        </Button>
                       </div>
                     </>
                   ) : (
-                    <div className="d-flex justify-content-between align-items-center">
-                      <div>
-                        <strong>{card.cardNumber}</strong>
-                        <div className="text-muted">Exp: {card.expirationDate}</div>
-                        <div className="text-muted" style={{ fontSize: "0.8rem" }}>
-                          {card.billingAddress}
+                    <>
+                      {/* VIEW MODE */}
+                      <div className="d-flex justify-content-between align-items-center">
+                        <div>
+                          <strong>{card.cardNumberMasked}</strong>
+
+                          <div className="text-muted">
+                            Exp: {card.expirationDate}
+                          </div>
+
+                          <div className="text-muted" style={{ fontSize: "0.8rem" }}>
+                            {card.billingAddress}
+                          </div>
+                        </div>
+
+                        <div className="d-flex gap-2">
+                          <Button size="sm" onClick={() => startEditCard(card)}>
+                            ✏️
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline-danger"
+                            onClick={() => removeCard(card._id)}
+                          >
+                            Remove
+                          </Button>
                         </div>
                       </div>
-                      <div className="d-flex gap-2">
-                        <Button size="sm" onClick={() => startEditCard(card)}>✏️</Button>
-                        <Button size="sm" variant="outline-danger" onClick={() => removeCard(card._id)}>Remove</Button>
-                      </div>
-                    </div>
+                    </>
                   )}
                 </Card>
               ))}

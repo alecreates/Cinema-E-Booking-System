@@ -62,13 +62,17 @@ export async function GET(req: NextRequest) {
 
     const cards = await PaymentCard.find({ customerId: userId });
 
-    // DECRYPT + MASK
     const safeCards = cards.map((card) => {
       const decrypted = decrypt(card.cardNumber);
 
       return {
         ...card.toObject(),
-        cardNumber: "**** **** **** " + decrypted.slice(-4), // 👈 best practice
+
+        // FULL value (for editing)
+        cardNumber: decrypted,
+
+        // MASKED value (for display only)
+        cardNumberMasked: `**** **** **** ${decrypted.slice(-4)}`,
       };
     });
 
