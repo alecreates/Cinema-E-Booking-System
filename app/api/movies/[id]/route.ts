@@ -12,9 +12,13 @@ export async function GET(_req: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
 
+    console.log("in api, id is", id)
+
     await dbConnect();
 
     const movie = await Movie.findOne({ id }).lean();
+
+    console.log(movie)
 
     if (!movie) {
       return NextResponse.json(

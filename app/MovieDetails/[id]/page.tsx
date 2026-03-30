@@ -26,10 +26,12 @@ const MovieDetails = () => {
       try {
         const res = await fetch(`/api/movies/${id}`);
 
+        console.log("movie with id:", id)
+
         if (!res.ok) throw new Error("Failed to fetch movie");
 
         const json = await res.json();
-        setMovie(json.data);
+        setMovie(json);
       } catch (err) {
         console.error("Error loading movie:", err);
       } finally {
