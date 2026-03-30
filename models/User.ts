@@ -48,8 +48,8 @@ const UserSchema = new Schema(
       default: "",
       trim: true,
     },
-  
-  resetPasswordTokenHash: {
+
+    resetPasswordTokenHash: {
       type: String,
       default: null,
     },
@@ -59,7 +59,7 @@ const UserSchema = new Schema(
     },
 
   },
-  
+
   { timestamps: true }
 );
 

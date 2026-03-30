@@ -53,6 +53,8 @@ export async function POST(req: Request) {
             promoSub: promoSub ?? false,
             verificationToken,
             address: address.trim(),
+            resetPasswordTokenHash: null,
+            resetPasswordExpiresAt: null
         });
 
         console.log("Saved user in DB:", await User.findOne({ email: email.toLowerCase().trim() }));
