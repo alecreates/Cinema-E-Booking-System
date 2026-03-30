@@ -94,13 +94,12 @@ const Register = () => {
                             </Form.Group>
 
                             <Form.Group className="mb-3" controlId="formAddress">
-                                <Form.Label>Address <span className="text-danger">*</span></Form.Label>
+                                <Form.Label>Address <span className="text-danger"></span></Form.Label>
                                 <Form.Control
                                     type="text"
                                     placeholder="Enter address"
                                     value={address}
                                     onChange={(e) => setAddress(e.target.value)}
-                                    required
                                 />
                             </Form.Group>
 
