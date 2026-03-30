@@ -106,7 +106,7 @@ const Profile = () => {
         promoSub: currentUser.promoSub || false,
         currentPassword: "",
         newPassword: "",
-        address: ""
+        address: currentUser.address || ""
       });
     }
   }, [currentUser]);
