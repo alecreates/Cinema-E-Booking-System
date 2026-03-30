@@ -9,14 +9,39 @@ const ForgotPassword = () => {
 
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setSubmitted(false);
+    setLoading(true);
 
-    // hook to backend later when passwords and emails and stuff are there idk its like 1am
-    console.log("Password reset requested for:", email);
+    try {
+      const res = await fetch("/api/ForgotPassword", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
 
-    setSubmitted(true);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Failed to send reset link.");
+        return;
+      }
+
+      setSubmitted(true);
+      setEmail("");
+    } catch (err) {
+      console.error("Forgot password request failed:", err);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -27,7 +52,7 @@ const ForgotPassword = () => {
             <h3 className="text-center mb-3">Forgot Password</h3>
 
             <p className="text-center text-muted mb-4" style={{ fontSize: "0.95rem" }}>
-              Enter your email and we'll send you a reset link.
+              Enter your email and we&apos;ll send you a reset link.
             </p>
 
             {submitted && (
@@ -35,6 +60,8 @@ const ForgotPassword = () => {
                 If an account exists for that email, a reset link has been sent.
               </Alert>
             )}
+
+            {error && <Alert variant="danger">{error}</Alert>}
 
             <Form onSubmit={handleSubmit}>
               <Form.Group className="mb-3" controlId="formForgotEmail">
@@ -48,8 +75,8 @@ const ForgotPassword = () => {
                 />
               </Form.Group>
 
-              <Button type="submit" variant="primary" className="w-100 mb-3">
-                Send Reset Link
+              <Button type="submit" variant="primary" className="w-100 mb-3" disabled={loading}>
+                {loading ? "Sending..." : "Send Reset Link"}
               </Button>
             </Form>
 
