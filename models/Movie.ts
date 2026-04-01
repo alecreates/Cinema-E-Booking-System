@@ -66,10 +66,6 @@ const MovieSchema = new Schema(
       type: [String],
       default: [],
     },
-    shows: {
-      type: [Show],
-      default: [],
-    },
     category: {
       type: String,
       default: "",
