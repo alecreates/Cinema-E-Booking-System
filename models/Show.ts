@@ -7,6 +7,12 @@ const ShowSchema = new Schema(
             ref: 'ShowRoom',
             required: true
         },
+        movieId:{
+            type: Schema.Types.ObjectId,
+            ref: 'Movie',
+            required: true
+
+        },
         showTime:{
             type: Date,
             required: true

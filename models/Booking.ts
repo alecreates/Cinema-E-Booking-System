@@ -16,11 +16,19 @@ const BookingSchema = new Schema (
         paymentCardId:{
             type: Schema.Types.ObjectId,
             ref: 'PaymentCard',
+            required: true
             
+        },
+        showId:{
+            type:Schema.Types.ObjectId,
+            ref: 'Show',
+            required: true
+
         },
         ticket:[{
             type: Schema.Types.ObjectId,
-            ref: 'Ticket'
+            ref: 'Ticket',
+            required: true
         }],
         total:{
             type: Number,
