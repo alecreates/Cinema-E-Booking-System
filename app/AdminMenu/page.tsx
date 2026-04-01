@@ -93,6 +93,9 @@ useEffect(() => {
                 </p>
                 <Button
                   variant="primary"
+                  onClick={() => {
+                    router.push("/AdminMenu/AdminAddShows");
+                  }}
                 >
                   Manage Showtimes
                 </Button>
