@@ -48,6 +48,9 @@ useEffect(() => {
                 </p>
                 <Button
                   variant="primary"
+                  onClick={() => {
+                    router.push("/AdminMenu/AdminAddMovies");
+                  }}
                 >
                   Go to Movies
                 </Button>
