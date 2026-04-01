@@ -26,12 +26,11 @@ const AdminAddShows = () => {
                 const res = await fetch("/api/movies");
                 const data = await res.json();
 
-                // filter only now showing
-                const nowShowing = data.data.filter(
-                    (movie) => movie.status === "now_showing"
-                );
+                //this is literally just copy/pasted from how we filter in the Homepage
+                const nowShowing = data.filter(m => m.status === "now_showing");
 
-                setMovies(nowShowing);
+                //right now, this displays ALL movies regardless of status
+                setMovies(data);
             } catch (err) {
                 console.error(err);
                 setError("Failed to load movies");
