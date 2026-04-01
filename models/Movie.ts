@@ -1,14 +1,5 @@
 import mongoose, { Schema, models, model } from "mongoose";
-
-const ShowtimeSchema = new Schema(
-  {
-    id: { type: String, required: true, trim: true },
-    date: { type: String, required: true, trim: true },
-    time: { type: String, required: true, trim: true },
-    hall: { type: String, required: true, trim: true },
-  },
-  { _id: false }
-);
+import Show from "./Show";
 
 const ReviewSchema = new Schema(
   {
@@ -75,8 +66,8 @@ const MovieSchema = new Schema(
       type: [String],
       default: [],
     },
-    showtimes: {
-      type: [ShowtimeSchema],
+    shows: {
+      type: [Show],
       default: [],
     },
     category: {

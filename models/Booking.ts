@@ -23,13 +23,7 @@ const BookingSchema = new Schema (
             type:Schema.Types.ObjectId,
             ref: 'Show',
             required: true
-
         },
-        ticket:[{
-            type: Schema.Types.ObjectId,
-            ref: 'Ticket',
-            required: true
-        }],
         total:{
             type: Number,
             required: true

@@ -16,7 +16,6 @@ const TicketSchema = new Schema(
             type: String,
             enum: ['CHILD', 'ADULT', 'SENIOR'],
             required: true
-
         }
     },
     {timestamps: true}

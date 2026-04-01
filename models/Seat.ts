@@ -1,4 +1,5 @@
 import mongoose, {Schema, model,models} from "mongoose";
+import Ticket from "./Ticket";
 
 const SeatSchema = new Schema(
     {
@@ -17,7 +18,6 @@ const SeatSchema = new Schema(
             type: Number,
             required: true
         }
-
     },
     {timestamps: true}
 )
