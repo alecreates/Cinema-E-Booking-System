@@ -44,7 +44,7 @@ useEffect(() => {
               <Card className="h-100 shadow-sm text-center p-4">
                 <h5 className="mb-3">🎬 Manage Movies</h5>
                 <p className="text-muted">
-                  Add, edit, or remove movies from the system.
+                  Add movies to the system.
                 </p>
                 <Button
                   variant="primary"
@@ -61,7 +61,7 @@ useEffect(() => {
               <Card className="h-100 shadow-sm text-center p-4">
                 <h5 className="mb-3">🏷️ Promotions</h5>
                 <p className="text-muted">
-                  Create and manage discounts or special offers.
+                  Create discounts or special offers.
                 </p>
                 <Button
                   variant="primary"
@@ -89,7 +89,7 @@ useEffect(() => {
               <Card className="h-100 shadow-sm text-center p-4">
                 <h5 className="mb-3">🕒 Showtimes</h5>
                 <p className="text-muted">
-                  Schedule and update movie showtimes.
+                  Schedule movie showtimes.
                 </p>
                 <Button
                   variant="primary"
