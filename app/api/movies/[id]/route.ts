@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "../../../../lib/mongodb";
 import Movie from "../../../../models/Movie";
+import { ObjectId } from "mongodb";
 
 type RouteContext = {
   params: Promise<{
@@ -12,13 +13,10 @@ export async function GET(_req: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
 
-    console.log("in api, id is", id)
-
     await dbConnect();
 
-    const movie = await Movie.findOne({ id }).lean();
-
-    console.log(movie)
+    // Find movie by MongoDB ObjectId
+    const movie = await Movie.findOne({ _id: new ObjectId(id) }).lean();
 
     if (!movie) {
       return NextResponse.json(
@@ -27,7 +25,10 @@ export async function GET(_req: Request, context: RouteContext) {
       );
     }
 
-    return NextResponse.json(movie, { status: 200 });
+    // Convert _id to string for frontend
+    const movieWithId = { ...movie, id: movie._id.toString() };
+
+    return NextResponse.json(movieWithId, { status: 200 });
   } catch (error) {
     console.error("GET /api/movies/[id] error:", error);
     return NextResponse.json(

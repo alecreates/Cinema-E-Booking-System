@@ -1,9 +1,7 @@
 import mongoose, { Schema, models, model } from "mongoose";
-import Show from "./Show";
 
 const ReviewSchema = new Schema(
   {
-    id: { type: String, required: true, trim: true },
     author: { type: String, required: true, trim: true },
     rating: { type: Number, required: true },
     comment: { type: String, required: true, trim: true },
@@ -27,58 +25,58 @@ const MovieSchema = new Schema(
       enum: ["now_showing", "coming_soon"],
       required: true,
     },
-    title: {
-      type: String,
-      required: true,
+    title: { 
+      type: String, 
+      required: true, 
       trim: true,
     },
-    description: {
-      type: String,
-      default: "",
+    description: { 
+      type: String, 
+      default: "", 
     },
-    synopsis: {
-      type: String,
-      default: "",
+    synopsis: { 
+      type: String, 
+      default: "", 
     },
-    rating: {
-      type: String,
-      default: "",
+    rating: { 
+      type: String, 
+      default: "", 
     },
-    posterUrl: {
-      type: String,
-      default: "",
+    posterUrl: { 
+      type: String, 
+      default: "", 
     },
-    trailerUrl: {
-      type: String,
-      default: "",
+    trailerUrl: { 
+      type: String, 
+      default: "", 
     },
-    duration: {
-      type: Number,
-      default: 0,
+    duration: { 
+      type: Number, 
+      default: 0, 
     },
-    genre: {
-      type: [String],
-      default: [],
+    genre: { 
+      type: [String], 
+      default: [], 
     },
-    category: {
-      type: String,
-      default: "",
+    category: { 
+      type: String, 
+      default: "", 
     },
-    cast: {
-      type: [CastMemberSchema],
-      default: [],
+    cast: { 
+      type: [CastMemberSchema], 
+      default: [], 
     },
-    director: {
-      type: String,
-      default: "",
+    director: { 
+      type: String, 
+      default: "", 
     },
-    producer: {
-      type: String,
-      default: "",
+    producer: { 
+      type: String, 
+      default: "", 
     },
-    reviews: {
-      type: [ReviewSchema],
-      default: [],
+    reviews: { 
+      type: [ReviewSchema], 
+      default: [], 
     },
   },
   { timestamps: true }

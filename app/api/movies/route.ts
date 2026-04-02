@@ -6,9 +6,12 @@ export async function GET() {
   try {
     await dbConnect();
 
-    const movies = await Movie.find().sort({ id: 1 }).lean();
+    const movies = await Movie.find().sort({ createdAt: -1 }).lean();
 
-    return NextResponse.json(movies, { status: 200 });
+    // Convert _id to string for frontend
+    const moviesWithId = movies.map(m => ({ ...m, id: m._id.toString() }));
+
+    return NextResponse.json({ data: moviesWithId }, { status: 200 });
   } catch (error) {
     console.error("GET /api/movies error:", error);
     return NextResponse.json(
@@ -32,10 +35,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const newMovie = await Movie.create(body)
+    const newMovie = await Movie.create(body);
 
-    return NextResponse.json(newMovie, { status: 201 });
+    // Convert _id to string for frontend
+    const movieWithId = { ...newMovie.toObject(), id: newMovie._id.toString() };
 
+    return NextResponse.json(movieWithId, { status: 201 });
   } catch (error) {
     console.error("POST /api/movies error:", error);
     return NextResponse.json(
