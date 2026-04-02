@@ -24,13 +24,10 @@ const AdminAddShows = () => {
         const fetchMovies = async () => {
             try {
                 const res = await fetch("/api/movies");
-                const data = await res.json();
-
-                //this is literally just copy/pasted from how we filter in the Homepage
-                const nowShowing = data.filter(m => m.status === "now_showing");
+                const json = await res.json();
 
                 //right now, this displays ALL movies regardless of status
-                setMovies(data);
+                setMovies(json.data || []);
             } catch (err) {
                 console.error(err);
                 setError("Failed to load movies");
@@ -119,7 +116,7 @@ const AdminAddShows = () => {
                                 >
                                     <option value="">-- Choose Movie --</option>
                                     {movies.map((movie) => (
-                                        <option key={movie._id} value={movie._id}>
+                                        <option key={movie.id} value={movie.id}>
                                             {movie.title}
                                         </option>
                                     ))}
