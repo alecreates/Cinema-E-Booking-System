@@ -6,7 +6,11 @@ const ShowRoomSchema = new Schema(
         rows: { type: Number, default: 10 },
         seatsPerRow: { type: Number, default: 12 },
     },
-    {timestamps:true}
+    {
+        timestamps:true,
+        collection: "ShowRoom" 
+    }
+    
 )
 
 const ShowRoom = models.ShowRoom || model("ShowRoom",ShowRoomSchema);

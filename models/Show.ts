@@ -16,10 +16,6 @@ const ShowSchema = new Schema(
         showTime:{
             type: Date,
             required: true
-        },
-        duration:{
-            type: Number,
-            required: true
         }
     },
     {timestamps: true}
