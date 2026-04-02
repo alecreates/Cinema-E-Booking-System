@@ -8,7 +8,7 @@ const AdminAddShows = () => {
     const router = useRouter();
 
     const [movies, setMovies] = useState([]);
-    const [showRooms, setShowRooms] = useState([]); // placeholder for future API
+    const [showRooms, setShowRooms] = useState([]);
 
     const [formData, setFormData] = useState({
         movieId: "",
@@ -40,14 +40,20 @@ const AdminAddShows = () => {
         fetchMovies();
     }, []);
 
-    // PLACEHOLDER SHOWROOMS (until API exists)
+    // FETCH SHOWROOMS
     useEffect(() => {
-        // TEMP dummy data
-        setShowRooms([
-            { _id: "1", name: "Room 1" },
-            { _id: "2", name: "Room 2" },
-            { _id: "3", name: "Room 3" },
-        ]);
+        const fetchShowrooms = async () => {
+            try {
+                const res = await fetch("/api/showrooms");
+                const data = await res.json();
+
+                setShowRooms(data);
+            } catch (err) {
+                console.error(err);
+                setError("Failed to load showrooms")
+            }
+        };
+        fetchShowrooms();
     }, []);
 
     const handleChange = (e) => {
@@ -71,6 +77,8 @@ const AdminAddShows = () => {
                 },
                 body: JSON.stringify(formData),
             });
+
+            console.log(JSON.stringify(formData))
 
             if (!res.ok) throw new Error("Failed to create show");
 

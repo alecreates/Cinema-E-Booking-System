@@ -6,6 +6,9 @@ export async function GET() {
     try {
         await dbConnect();
 
+        console.log("DB NAME:", Show.db.name);
+        console.log("COLLECTION:", Show.collection.name);
+
         const shows = await Show.find()
             .sort({ showTime: 1 })
             .lean();

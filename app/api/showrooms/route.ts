@@ -6,12 +6,6 @@ export async function GET() {
     try {
         await dbConnect();
 
-        console.log("DB NAME:", ShowRoom.db.name);
-        console.log("COLLECTION:", ShowRoom.collection.name);
-
-        const count = await ShowRoom.countDocuments();
-        console.log("COUNT:", count);
-
         const showRooms = await ShowRoom.find({});
 
         return NextResponse.json(showRooms, { status: 200 });
