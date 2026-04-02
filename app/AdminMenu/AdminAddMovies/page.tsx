@@ -8,7 +8,6 @@ const AdminAddMovies = () => {
   const router = useRouter();
 
   const [formData, setFormData] = useState({
-    id: "",
     title: "",
     status: "coming_soon",
     rating: "",
@@ -59,7 +58,6 @@ const AdminAddMovies = () => {
 
       setSuccessMsg(`Movie "${data.title}" added successfully!`);
       setFormData({
-        id: "",
         title: "",
         status: "coming_soon",
         rating: "",
@@ -90,17 +88,6 @@ const AdminAddMovies = () => {
             {errorMsg && <Alert variant="danger">{errorMsg}</Alert>}
 
             <Form onSubmit={handleSubmit}>
-              <Form.Group className="mb-3">
-                <Form.Label>Movie ID *</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="id"
-                  value={formData.id}
-                  onChange={handleChange}
-                  placeholder="e.g. m10"
-                  required
-                />
-              </Form.Group>
 
               <Form.Group className="mb-3">
                 <Form.Label>Title *</Form.Label>

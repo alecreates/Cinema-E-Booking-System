@@ -27,12 +27,6 @@ const MovieSchema = new Schema(
       enum: ["now_showing", "coming_soon"],
       required: true,
     },
-    id: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
     title: {
       type: String,
       required: true,
