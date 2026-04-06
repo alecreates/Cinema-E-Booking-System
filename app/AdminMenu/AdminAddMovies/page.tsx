@@ -35,7 +35,7 @@ const AdminAddMovies = () => {
     setSuccessMsg("");
     setErrorMsg("");
 
-    // Convert genre string to array
+        // Convert genre string to array
     const movieData = {
       ...formData,
       genre: formData.genre.split(",").map((g) => g.trim()),
@@ -78,11 +78,11 @@ const AdminAddMovies = () => {
   };
 
   return (
-    <Container className="py-4">
+    <Container className="mt-5">
       <Row className="justify-content-center">
-        <Col xs={12} md={8}>
-          <Card className="p-4 shadow-sm">
-            <h3 className="mb-3">Add New Movie</h3>
+        <Col md={6}>
+          <Card className="p-4 shadow">
+            <h3 className="mb-4 text-center">Add New Movie</h3>
 
             {successMsg && <Alert variant="success">{successMsg}</Alert>}
             {errorMsg && <Alert variant="danger">{errorMsg}</Alert>}
@@ -90,7 +90,7 @@ const AdminAddMovies = () => {
             <Form onSubmit={handleSubmit}>
 
               <Form.Group className="mb-3">
-                <Form.Label>Title *</Form.Label>
+                <Form.Label>Title</Form.Label>
                 <Form.Control
                   type="text"
                   name="title"
@@ -101,7 +101,7 @@ const AdminAddMovies = () => {
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label>Status *</Form.Label>
+                <Form.Label>Status</Form.Label>
                 <Form.Select name="status" value={formData.status} onChange={handleChange} required>
                   <option value="coming_soon">Coming Soon</option>
                   <option value="now_showing">Now Showing</option>
@@ -212,7 +212,7 @@ const AdminAddMovies = () => {
                 />
               </Form.Group>
 
-              <Button type="submit" variant="primary">
+              <Button type="submit" variant="primary" className="w-100">
                 Add Movie
               </Button>
             </Form>
