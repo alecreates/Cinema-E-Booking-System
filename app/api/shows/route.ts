@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "../../../lib/mongodb";
 import Show from "@/models/Show";
+import mongoose from "mongoose";
 
 export async function GET() {
     try {
@@ -28,21 +29,58 @@ export async function POST(req: NextRequest) {
         await dbConnect();
 
         const body = await req.json();
+        const { showRoomId, movieId, timeSlot, date } = body;
 
-        const { showRoomId, movieId, showTime } = body;
-
-        // basic validation
-        if (!showRoomId || !movieId || !showTime) {
+        // Basic validation
+        if (!showRoomId || !movieId || !timeSlot || !date) {
             return NextResponse.json(
                 { message: "Missing required fields" },
                 { status: 400 }
             );
         }
 
+        // Validate ObjectIds
+        if (
+            !mongoose.Types.ObjectId.isValid(showRoomId) ||
+            !mongoose.Types.ObjectId.isValid(movieId)
+        ) {
+            return NextResponse.json(
+                { message: "Invalid movie or showroom ID" },
+                { status: 400 }
+            );
+        }
+
+        // Normalize date to check conflicts
+        const selectedDate = new Date(date);
+        const startOfDay = new Date(selectedDate.setHours(0, 0, 0, 0));
+        const endOfDay = new Date(selectedDate.setHours(23, 59, 59, 999));
+
+        // Conflict check
+        const existingShow = await Show.findOne({
+            showRoomId,
+            timeSlot,
+            date: {
+                $gte: startOfDay,
+                $lte: endOfDay,
+            },
+        });
+
+        if (existingShow) {
+            return NextResponse.json(
+                {
+                    message:
+                        "This time slot is already booked for the selected room on this date.",
+                },
+                { status: 400 }
+            );
+        }
+
+        // Create show
         const newShow = await Show.create({
             showRoomId,
             movieId,
-            showTime,
+            timeSlot,
+            date: selectedDate,
         });
 
         return NextResponse.json(newShow, { status: 201 });

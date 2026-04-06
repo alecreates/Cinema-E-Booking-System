@@ -17,6 +17,11 @@ const SeatSchema = new Schema(
         number:{
             type: Number,
             required: true
+        },
+        available: {
+            type: Boolean,
+            required: true,
+            default: true
         }
     },
     {timestamps: true}

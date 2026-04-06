@@ -9,11 +9,13 @@ const AdminAddShows = () => {
 
     const [movies, setMovies] = useState([]);
     const [showRooms, setShowRooms] = useState([]);
+    const [shows, setShows] = useState([]);
 
     const [formData, setFormData] = useState({
         movieId: "",
         showRoomId: "",
-        showTime: "",
+        timeSlot: "",
+        date: ""
     });
 
     const [message, setMessage] = useState("");
@@ -35,6 +37,21 @@ const AdminAddShows = () => {
         };
 
         fetchMovies();
+    }, []);
+
+    // FETCH SHOWS
+    useEffect(() => {
+        const fetchShows = async () => {
+            try {
+                const res = await fetch("/api/shows");
+                const data = await res.json();
+                setShows(data);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        fetchShows();
     }, []);
 
     // FETCH SHOWROOMS
@@ -85,7 +102,8 @@ const AdminAddShows = () => {
             setFormData({
                 movieId: "",
                 showRoomId: "",
-                showTime: "",
+                timeSlot: "",
+                date: ""
             });
 
         } catch (err) {
@@ -93,6 +111,22 @@ const AdminAddShows = () => {
             setError("Error scheduling show");
         }
     };
+
+
+    // helper method to get unavailable time slots 
+    const getUnavailableSlots = () => {
+        if (!formData.showRoomId || !formData.date) return [];
+
+        return shows
+            .filter(
+                (show) =>
+                    show.showRoomId === formData.showRoomId &&
+                    new Date(show.date).toISOString().split("T")[0] === formData.date
+            )
+            .map((show) => show.timeSlot);
+    };
+    
+    const unavailableSlots = getUnavailableSlots();
 
     return (
         <Container className="mt-5">
@@ -141,18 +175,39 @@ const AdminAddShows = () => {
                                 </Form.Select>
                             </Form.Group>
 
-                            {/* DATE + TIME */}
                             <Form.Group className="mb-3">
-                                <Form.Label>Show Time</Form.Label>
+                                <Form.Label>Date</Form.Label>
                                 <Form.Control
-                                    type="datetime-local"
-                                    name="showTime"
-                                    value={formData.showTime}
+                                    type="date"
+                                    name="date"
+                                    value={formData.date}
                                     onChange={handleChange}
                                     required
                                 />
                             </Form.Group>
 
+                            {/* DATE + TIME */}
+                            <Form.Group className="mb-3">
+                                <Form.Label>Show Time</Form.Label>
+                                <Form.Select
+                                    name="timeSlot"
+                                    value={formData.timeSlot}
+                                    onChange={handleChange}
+                                    required
+                                >
+                                    <option value="">-- Choose Time --</option>
+
+                                    {["12PM", "3PM", "6PM"].map((slot) => (
+                                        <option
+                                            key={slot}
+                                            value={slot}
+                                            disabled={unavailableSlots.includes(slot)}
+                                        >
+                                            {slot} {unavailableSlots.includes(slot) ? "(Unavailable)" : ""}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
                             <Button variant="primary" type="submit" className="w-100">
                                 Schedule Show
                             </Button>

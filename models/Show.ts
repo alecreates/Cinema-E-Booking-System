@@ -13,9 +13,14 @@ const ShowSchema = new Schema(
             required: true
 
         },
-        showTime:{
-            type: Date,
+        timeSlot:{
+            type: String,
+            enum: ['12PM', '3PM', '6PM'],
             required: true
+        },
+        date: {
+            type: Date,
+            required: true,
         }
     },
     {timestamps: true}
