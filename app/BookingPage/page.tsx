@@ -1,8 +1,14 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Container, Row, Col, Card, Button, Badge, Form } from "react-bootstrap";
+import { Alert, Container, Row, Col, Card, Button, Badge, Form } from "react-bootstrap";
 import { useRouter, useSearchParams } from "next/navigation";
+
+const PRICES = {
+  adult: 12.99,
+  child: 8.99,
+  senior: 9.99,
+};
 
 const BookingPage = () => {
   const router = useRouter();
@@ -11,12 +17,7 @@ const BookingPage = () => {
   const movie = searchParams.get("movie");
   const time = searchParams.get("time");
   const date = searchParams.get("date");
-
-  const PRICES = {
-    adult: 12.99,
-    child: 8.99,
-    senior: 9.99,
-  };
+  const hall = searchParams.get("hall");
 
   const [tickets, setTickets] = useState({
     adult: 0,
@@ -50,6 +51,36 @@ const BookingPage = () => {
     );
   }, [tickets]);
 
+  const ticketCount = useMemo(() => {
+    return tickets.adult + tickets.child + tickets.senior;
+  }, [tickets]);
+
+  const seatSelectionError =
+    ticketCount === 0
+      ? "Select at least one ticket to continue."
+      : selectedSeats.length !== ticketCount
+        ? `Please select ${ticketCount} seat${ticketCount === 1 ? "" : "s"} for your order.`
+        : "";
+
+  const handleProceedToCheckout = () => {
+    if (seatSelectionError) {
+      return;
+    }
+
+    const params = new URLSearchParams({
+      movie: movie || "Movie Title",
+      time: time || "Time",
+      date: date || "Date",
+      hall: hall || "Main Hall",
+      seats: selectedSeats.join(","),
+      adult: String(tickets.adult),
+      child: String(tickets.child),
+      senior: String(tickets.senior),
+    });
+
+    router.push(`/Checkout?${params.toString()}`);
+  };
+
   return (
     <Container fluid className="min-vh-100 bg-light py-4">
       <Row className="justify-content-center mb-3">
@@ -78,6 +109,7 @@ const BookingPage = () => {
             <p className="text-muted mb-2">
               {date || "Date"} • {time || "Time"}
             </p>
+            <p className="text-muted mb-2">{hall || "Main Hall"}</p>
             <Badge bg="secondary">Prototype</Badge>
           </Card>
         </Col>
@@ -134,6 +166,9 @@ const BookingPage = () => {
 
             <hr />
 
+            <p className="text-muted mb-2">
+              Tickets selected: <strong>{ticketCount}</strong>
+            </p>
             <h6>Total: ${total.toFixed(2)}</h6>
           </Card>
         </Col>
@@ -186,12 +221,18 @@ const BookingPage = () => {
                 : "None"}
             </p>
 
-            <Button variant="primary" disabled>
-              Proceed to Payment
+            {seatSelectionError && (
+              <Alert variant="warning" className="py-2 text-start">
+                {seatSelectionError}
+              </Alert>
+            )}
+
+            <Button variant="primary" onClick={handleProceedToCheckout} disabled={!!seatSelectionError}>
+              Proceed to Checkout
             </Button>
 
             <p className="text-muted mt-2" style={{ fontSize: "0.85rem" }}>
-              Not functional. Adding functionality in a later sprint.
+              Continue to review your order summary and confirm the email address for this booking.
             </p>
           </Card>
         </Col>

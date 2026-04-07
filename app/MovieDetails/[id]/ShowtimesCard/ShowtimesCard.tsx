@@ -14,8 +14,7 @@ const ShowtimesCard = ({ movie }: { movie: Movie }) => {
   { id: "temp-3", time: "8:00 PM", date: "Today", hall: "Hall 1" },
 ];
 
-/*  uncomment when DB showtimes added
-  // ✅ Conditional guard
+/*  
   if (!movie.showtimes || movie.showtimes.length === 0) {
     return (
       <Card className="m-3 shadow-sm">
@@ -58,6 +57,7 @@ const ShowtimesCard = ({ movie }: { movie: Movie }) => {
                   )}&time=${encodeURIComponent(
                     showtime.time
                   )}&date=${encodeURIComponent(showtime.date)}`
+                  + `&hall=${encodeURIComponent(showtime.hall)}`
                 )
               }
             >
