@@ -65,6 +65,9 @@ useEffect(() => {
                 </p>
                 <Button
                   variant="primary"
+                  onClick={() => {
+                    router.push("/AdminMenu/AdminAddPromotion");
+                  }}
                 >
                   Manage Promotions
                 </Button>
