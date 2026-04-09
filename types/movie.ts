@@ -21,6 +21,7 @@ export type CastMember = {
 };
 
 export type Movie = {
+    id: string;
     status: MovieStatus;
     title: string;
     description: string;

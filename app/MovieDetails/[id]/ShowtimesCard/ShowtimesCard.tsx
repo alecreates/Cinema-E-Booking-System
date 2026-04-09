@@ -1,5 +1,6 @@
 import { Movie } from "@/types/movie";
-import React from "react";
+//import React from "react";
+import React, {useEffect, useState} from "react"
 import { Card } from "react-bootstrap";
 import styles from "./ShowtimesCard.module.css";
 import { useRouter } from "next/navigation";
@@ -8,11 +9,22 @@ const ShowtimesCard = ({ movie }: { movie: Movie }) => {
   const router = useRouter();
 
   //remove when adding actual showtimes to DB
-  const fallbackShowtimes = [
-  { id: "temp-1", time: "2:00 PM", date: "Today", hall: "Hall 1" },
-  { id: "temp-2", time: "5:00 PM", date: "Today", hall: "Hall 1" },
-  { id: "temp-3", time: "8:00 PM", date: "Today", hall: "Hall 1" },
-];
+  //const fallbackShowtimes = [
+  //{ id: "temp-1", time: "2:00 PM", date: "Today", hall: "Hall 1" },
+  //{ id: "temp-2", time: "5:00 PM", date: "Today", hall: "Hall 1" },
+  //{ id: "temp-3", time: "8:00 PM", date: "Today", hall: "Hall 1" },
+//];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const [showtimes, setShowtimes] = useState<any[]>([]);
+
+useEffect(()=> {
+  if (movie?.id){
+    fetch(`/api/shows/${movie.id}`)
+      .then((res) => res.json())
+      .then((data) => setShowtimes(data))
+      .catch((err) => console.error("Failed to fetch showtimes", err))
+  }
+}, [movie.id]);
 
 /*  
   if (!movie.showtimes || movie.showtimes.length === 0) {
@@ -28,10 +40,10 @@ const ShowtimesCard = ({ movie }: { movie: Movie }) => {
     */
 
   //remove this block when showtimes added to DB
-  const showtimesToDisplay =
-  movie.showtimes && movie.showtimes.length > 0
-    ? movie.showtimes
-    : fallbackShowtimes;
+  //const showtimesToDisplay =
+  //movie.showtimes && movie.showtimes.length > 0
+  //  ? movie.showtimes
+  //  : fallbackShowtimes;
 
     //change {showtimesToDisplay.map((showtime) => ( back to movie.showtimes.map((showtime) => (
     //when showtimes added
@@ -41,9 +53,9 @@ const ShowtimesCard = ({ movie }: { movie: Movie }) => {
 
       <Card.Body>
         <div className="d-flex flex-wrap gap-3">
-          {showtimesToDisplay.map((showtime) => (
+          {showtimes.map((showtime) => (
             <Card
-              key={showtime.id}
+              key={showtime._id}
               className={`p-2 ${styles.hoverableCard}`}
               style={{
                 width: "140px",
@@ -55,16 +67,16 @@ const ShowtimesCard = ({ movie }: { movie: Movie }) => {
                   `/BookingPage?movie=${encodeURIComponent(
                     movie.title
                   )}&time=${encodeURIComponent(
-                    showtime.time
-                  )}&date=${encodeURIComponent(showtime.date)}`
-                  + `&hall=${encodeURIComponent(showtime.hall)}`
+                    showtime.timeSlot
+                  )}&date=${encodeURIComponent(new Date(showtime.date).toLocaleDateString('en-US',{timeZone: 'UTC'}))}`
+                  + `&hall=${encodeURIComponent(showtime.showRoomId?.name)}`
                 )
               }
             >
               <Card.Body className="p-2 text-center">
-                <div className="fw-bold">{showtime.time}</div>
-                <div className="small text-muted">{showtime.date}</div>
-                <div className="small">{showtime.hall}</div>
+                <div className="fw-bold">{showtime.timeSlot}</div>
+                <div className="small text-muted">{new Date(showtime.date).toLocaleDateString('en-US',{timeZone:'UTC'})}</div>
+                <div className="small">{showtime.showRoomId?.name}</div>
               </Card.Body>
             </Card>
           ))}
