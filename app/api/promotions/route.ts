@@ -8,11 +8,15 @@ export async function GET() {
 
     const promos = await Promotion.find();
 
-    return NextResponse.json(promos, { status: 200 });
+    return NextResponse.json({
+      success: true,
+      data: promos,
+    });
   } catch (error) {
-    console.error(error);
+    console.error("GET promotions error:", error);
+
     return NextResponse.json(
-      { message: "Failed to fetch promotions" },
+      { success: false, message: "Failed to fetch promotions" },
       { status: 500 }
     );
   }
@@ -24,9 +28,9 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
 
-    if (!body.promoCode || !body.discount) {
+    if (!body.promoCode || body.discount == null) {
       return NextResponse.json(
-        { message: "Missing required fields" },
+        { success: false, message: "Missing required fields" },
         { status: 400 }
       );
     }
@@ -36,12 +40,16 @@ export async function POST(req: NextRequest) {
       discount: body.discount,
     });
 
-    return NextResponse.json(newPromo, { status: 201 });
+    return NextResponse.json({
+      success: true,
+      data: newPromo,
+    }, { status: 201 });
 
   } catch (error) {
-    console.error(error);
+    console.error("POST promotions error:", error);
+
     return NextResponse.json(
-      { message: "Failed to create promotion" },
+      { success: false, message: "Failed to create promotion" },
       { status: 500 }
     );
   }

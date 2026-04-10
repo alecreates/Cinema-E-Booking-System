@@ -11,44 +11,67 @@ const AdminAddPromos = () => {
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: any) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     setMessage("");
     setError("");
+    setLoading(true);
 
     try {
+      // 1. create promo
       const res = await fetch("/api/promotions", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           promoCode: formData.promoCode,
           discount: Number(formData.discount),
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to create promotion");
+      const promoRes = await res.json();
 
-      setMessage("Promotion created successfully!");
+      if (!res.ok) throw new Error(promoRes.message);
+
+      // 2. trigger email sending (SERVER SIDE)
+      const emailRes = await fetch("/api/promotions/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          promoCode: promoRes.data.promoCode,
+          discount: promoRes.data.discount,
+        }),
+      });
+
+      const emailData = await emailRes.json();
+
+      if (!emailRes.ok) {
+        throw new Error(emailData.message);
+      }
+
+      setMessage(
+        `Promo created + emails sent to ${emailData.sent} users`
+      );
 
       setFormData({
         promoCode: "",
         discount: "",
       });
 
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError("Error creating promotion");
+      setError(err.message || "Error creating promotion");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -63,11 +86,11 @@ const AdminAddPromos = () => {
             {error && <Alert variant="danger">{error}</Alert>}
 
             <Form onSubmit={handleSubmit}>
-
+              
               <Form.Group className="mb-3">
                 <Form.Label>Promo Code</Form.Label>
                 <Form.Control
-                  type="text"
+                
                   name="promoCode"
                   value={formData.promoCode}
                   onChange={handleChange}
@@ -86,8 +109,8 @@ const AdminAddPromos = () => {
                 />
               </Form.Group>
 
-              <Button variant="primary" type="submit" className="w-100">
-                Create Promotion
+              <Button type="submit" className="w-100" disabled={loading}>
+                {loading ? "Processing..." : "Create Promotion"}
               </Button>
 
             </Form>
@@ -98,4 +121,4 @@ const AdminAddPromos = () => {
   );
 };
 
-export default AdminAddPromos;  
+export default AdminAddPromos;

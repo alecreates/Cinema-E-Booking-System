@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/mongodb";
 import User from "@/models/User";
 
@@ -81,4 +81,30 @@ export async function PUT(req: Request) {
             { status: 500 }
         );
     }
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    await dbConnect();
+
+    const { searchParams } = new URL(req.url);
+    const promoSub = searchParams.get("promoSub");
+
+    let filter = {};
+
+    if (promoSub === "true") {
+      filter = { promoSub: true };
+    }
+
+    const users = await User.find(filter).lean();
+
+    return NextResponse.json(users, { status: 200 });
+  } catch (error) {
+    console.error("GET users error:", error);
+
+    return NextResponse.json(
+      { message: "Failed to fetch users" },
+      { status: 500 }
+    );
+  }
 }

@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
+    "@emailjs/nodejs": "^5.0.2",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "bootstrap": "^5.3.8",
+    "emailjs": "^5.0.0",
     "mongodb": "^7.1.0",
     "mongoose": "^9.3.1",
     "mysql2": "^3.17.2",
