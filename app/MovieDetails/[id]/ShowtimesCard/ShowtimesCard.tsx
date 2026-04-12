@@ -70,6 +70,8 @@ useEffect(()=> {
                     showtime.timeSlot
                   )}&date=${encodeURIComponent(new Date(showtime.date).toLocaleDateString('en-US',{timeZone: 'UTC'}))}`
                   + `&hall=${encodeURIComponent(showtime.showRoomId?.name)}`
+                  + `&rows=${encodeURIComponent(showtime.showRoomId?.rows)}`
+                  + `&seatsPerRow=${encodeURIComponent(showtime.showRoomId?.seatsPerRow)}`
                 )
               }
             >
