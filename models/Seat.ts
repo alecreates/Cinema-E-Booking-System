@@ -10,7 +10,7 @@ const SeatSchema = new Schema(
 
         },
         row:{
-            type: Number,
+            type: String,
             required: true
 
         },
