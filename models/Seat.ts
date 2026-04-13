@@ -10,7 +10,7 @@ const SeatSchema = new Schema(
 
         },
         row:{
-            type: Number,
+            type: String,
             required: true
 
         },
@@ -18,11 +18,6 @@ const SeatSchema = new Schema(
             type: Number,
             required: true
         },
-        available: {
-            type: Boolean,
-            required: true,
-            default: true
-        }
     },
     {timestamps: true}
 )

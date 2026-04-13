@@ -18,6 +18,8 @@ const BookingPage = () => {
   const time = searchParams.get("time");
   const date = searchParams.get("date");
   const hall = searchParams.get("hall");
+  const rows = searchParams.get("rows");
+  const seatsPerRow = searchParams.get("seatsPerRow")
 
   const [tickets, setTickets] = useState({
     adult: 0,
@@ -25,10 +27,18 @@ const BookingPage = () => {
     senior: 0,
   });
 
-  const seats = Array.from({ length: 30 }, (_, i) => i + 1);
-  const [selectedSeats, setSelectedSeats] = useState<number[]>([]);
+  const seats: string[] = [];
+  for(let i = 0; i < Number(rows); i ++){
+    for(let j = 0; j < Number(seatsPerRow); j ++){
+      const letter = `${String.fromCharCode(65 + i)}${j+1}`;
+      seats.push(letter)
 
-  const toggleSeat = (seat: number) => {
+    }
+  }
+    
+  const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
+
+  const toggleSeat = (seat: string) => {
     setSelectedSeats((prev) =>
       prev.includes(seat)
         ? prev.filter((s) => s !== seat)
@@ -72,6 +82,8 @@ const BookingPage = () => {
       time: time || "Time",
       date: date || "Date",
       hall: hall || "Main Hall",
+      rows: rows || "rows",
+      seatsPerRow: seatsPerRow || "seatsPerRow",
       seats: selectedSeats.join(","),
       adult: String(tickets.adult),
       child: String(tickets.child),
@@ -182,7 +194,7 @@ const BookingPage = () => {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(6, 1fr)",
+                gridTemplateColumns: `repeat(${seatsPerRow}, 1fr)`,
                 gap: "10px",
                 justifyItems: "center",
                 marginBottom: "20px",
