@@ -72,6 +72,7 @@ useEffect(()=> {
                   + `&hall=${encodeURIComponent(showtime.showRoomId?.name)}`
                   + `&rows=${encodeURIComponent(showtime.showRoomId?.rows)}`
                   + `&seatsPerRow=${encodeURIComponent(showtime.showRoomId?.seatsPerRow)}`
+                  + `&showId=${encodeURIComponent(showtime._id)}`
                 )
               }
             >

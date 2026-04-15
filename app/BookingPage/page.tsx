@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Alert, Container, Row, Col, Card, Button, Badge, Form } from "react-bootstrap";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -19,22 +19,40 @@ const BookingPage = () => {
   const date = searchParams.get("date");
   const hall = searchParams.get("hall");
   const rows = searchParams.get("rows");
-  const seatsPerRow = searchParams.get("seatsPerRow")
-
+  const seatsPerRow = searchParams.get("seatsPerRow");
+  const showId = searchParams.get("showId");
   const [tickets, setTickets] = useState({
     adult: 0,
     child: 0,
     senior: 0,
   });
+const [seats, setSeats] = useState<any[]>([]);
+const [bookedSeatIds, setBookedSeatIds] = useState<string[]>([]);
 
-  const seats: string[] = [];
-  for(let i = 0; i < Number(rows); i ++){
-    for(let j = 0; j < Number(seatsPerRow); j ++){
-      const letter = `${String.fromCharCode(65 + i)}${j+1}`;
-      seats.push(letter)
-
+useEffect(() => {
+    if (showId) {
+        fetch(`/api/seats/${showId}`)
+            .then((res) => res.json())
+            .then((data) => {
+                setSeats(data.seats);
+                const ids = data.tickets.map((t: any) => t.seatId.toString());
+                console.log("bookedSeatIds:", ids);
+                console.log("seat ids:", data.seats.map((s: any) => s._id.toString()));
+                setBookedSeatIds(data.tickets.map((t: any) => t.seatId.toString()));
+            })
+            .catch((err) => console.error("Failed to fetch seats", err));
     }
-  }
+}, [showId]);
+  //const seats: string[] = [];
+  //for(let i = 0; i < Number(rows); i ++){
+    //for(let j = 0; j < Number(seatsPerRow); j ++){
+      //const letter = `${String.fromCharCode(65 + i)}${j+1}`;
+      //seats.push(letter)
+
+    //}
+  //}
+  
+
     
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
 
@@ -85,6 +103,7 @@ const BookingPage = () => {
       hall: hall || "Main Hall",
       rows: rows || "rows",
       seatsPerRow: seatsPerRow || "seatsPerRow",
+      showId: showId || "showId",
       seats: selectedSeats.join(","),
       adult: String(tickets.adult),
       child: String(tickets.child),
@@ -202,26 +221,30 @@ const BookingPage = () => {
               }}
             >
               {seats.map((seat) => {
-                const isSelected = selectedSeats.includes(seat);
+                const isSelected = selectedSeats.includes(`${seat.row}${seat.number}`);
 
                 return (
                   <div
-                    key={seat}
-                    onClick={() => toggleSeat(seat)}
+                    key={seat._id}
+                    onClick={() => {
+                      if (!bookedSeatIds.includes(seat._id.toString())) {
+                        toggleSeat(`${seat.row}${seat.number}`);
+                      }
+                    }}
                     style={{
                       width: "40px",
                       height: "40px",
                       borderRadius: "5px",
-                      background: isSelected ? "#0d6efd" : "#6c757d",
+                      background: isSelected ? "#0d6efd" : bookedSeatIds.includes(seat._id.toString()) ? "#dc3545" : "#6c757d",
                       color: "white",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       fontSize: "0.8rem",
-                      cursor: "pointer",
+                      cursor: bookedSeatIds.includes(seat._id.toString()) ? "not-allowed" : "pointer",
                     }}
                   >
-                    {seat}
+                    {seat.row}{seat.number}
                   </div>
                 );
               })}

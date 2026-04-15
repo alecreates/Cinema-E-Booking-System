@@ -19,7 +19,7 @@ const SeatSchema = new Schema(
             required: true
         },
     },
-    {timestamps: true}
+    {timestamps: true, collection:"Seat"}
 )
 const Seat = models.Seat || model("Seat", SeatSchema);
 export default Seat

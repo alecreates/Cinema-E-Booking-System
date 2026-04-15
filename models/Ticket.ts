@@ -12,13 +12,18 @@ const TicketSchema = new Schema(
             ref: 'Seat',
             required: true
         },
+        showId:{
+            type: Schema.Types.ObjectId,
+            ref: 'Show',
+            required: true
+        },
         type:{
             type: String,
             enum: ['CHILD', 'ADULT', 'SENIOR'],
             required: true
         }
     },
-    {timestamps: true}
+    {timestamps: true ,collection: "Ticket"}
     
 
 )
