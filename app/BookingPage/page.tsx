@@ -13,7 +13,7 @@ const PRICES = {
 const BookingPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-
+  const movieID = searchParams.get("movieID");
   const movie = searchParams.get("movie");
   const time = searchParams.get("time");
   const date = searchParams.get("date");
@@ -78,6 +78,7 @@ const BookingPage = () => {
     }
 
     const params = new URLSearchParams({
+      movieID: movieID || "Movie ID",
       movie: movie || "Movie Title",
       time: time || "Time",
       date: date || "Date",

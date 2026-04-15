@@ -12,7 +12,7 @@ const MovieInteractionSchema = new Schema<IMovieInteraction>({
   movieId: { type: Schema.Types.ObjectId, ref: "Movie", required: true },
   action: {
     type: String,
-    enum: ["view", "favorite", "purchase"],
+    enum: ["favorite", "purchase"],
     required: true,
   },
   createdAt: { type: Date, default: Date.now },

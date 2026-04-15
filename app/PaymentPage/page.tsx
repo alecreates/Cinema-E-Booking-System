@@ -32,6 +32,7 @@ const PaymentPage = () => {
   const { currentUser } = useUser();
 
   const movie = searchParams.get("movie") || "Movie Title";
+  const movieID = searchParams.get("movieID");
   const date = searchParams.get("date") || "Date";
   const time = searchParams.get("time") || "Time";
   const hall = searchParams.get("hall") || "Main Hall";
@@ -123,6 +124,17 @@ const PaymentPage = () => {
         name: currentUser?.name || "Guest",
         email,
         message: orderMessage,
+      });
+      await fetch("/api/interactions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: currentUser?.id,
+          movieId: movieID,
+          action: "purchase",
+        }),
       });
       setEmailSent(true);
     } catch (error) {

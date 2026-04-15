@@ -12,81 +12,105 @@ export async function POST(req: Request) {
     await dbConnect();
 
     const user = await User.findById(userId);
-
+    
     if (!user) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 });
+      return NextResponse.json(
+        { message: "User not found" },
+        { status: 404 }
+      );
     }
 
     const movie = await Movie.findById(movieId);
     if (!movie) {
-      return NextResponse.json({ message: "Movie not found" }, { status: 404 });
+      return NextResponse.json(
+        { message: "Movie not found" },
+        { status: 404 }
+      );
     }
 
-    let updatedFavorites = (user.favoriteMovies || [])
-      .filter((id: any) => id) // remove nulls
+    let favorites = (user.favoriteMovies || [])
+      .filter(Boolean)
       .map((id: any) => id.toString());
 
-    let isNowFavorite: boolean;
-    if (updatedFavorites.includes(movieId)) {
-      // remove 
-      updatedFavorites = updatedFavorites.filter((id) => id !== movieId);
-      isNowFavorite = false;
+    const isAlreadyFavorite = favorites.includes(movieId);
+
+    if (isAlreadyFavorite) {
+      favorites = favorites.filter((id) => id !== movieId);
     } else {
-      // add 
-      updatedFavorites.push(movieId);
-      isNowFavorite = true;
+      favorites.push(movieId);
     }
 
-    user.favoriteMovies = updatedFavorites;
+    user.favoriteMovies = favorites;
     await user.save();
 
-    // Update user preferences
     let prefs = await UserPreference.findOne({ userId });
+
     if (!prefs) {
-      // create new preferences
       prefs = await UserPreference.create({
         userId,
-        likedMovies: isNowFavorite ? [movieId] : [],
-        favoriteGenres: isNowFavorite ? movie.genre : [],
+        likedMovies: [],
+        favoriteGenres: [],
       });
-    } else {
-      // update liked movies
-      if (isNowFavorite && !prefs.likedMovies.includes(movieId)) {
-        prefs.likedMovies.push(movieId);
-      } else if (!isNowFavorite) {
-        prefs.likedMovies = prefs.likedMovies.filter(
-          (id) => id.toString() !== movieId
-        );
-      }
-
-      // update genres
-      if (isNowFavorite) {
-        movie.genre.forEach((g: string) => {
-          if (!prefs.favoriteGenres.includes(g)) {
-            prefs.favoriteGenres.push(g);
-          }
-        });
-      }
-
-      await prefs.save();
     }
 
-    // Log the movie interaction
-    await MovieInteraction.create({
-      userId,
-      movieId,
-      action: isNowFavorite ? "favorite" : "view", // must match enum: 'view', 'favorite', 'purchase'
-    });
+    if (!isAlreadyFavorite) {
+      if (!prefs.likedMovies.map(String).includes(movieId)) {
+        prefs.likedMovies.push(movieId);
+      }
+
+      movie.genre.forEach((g: string) => {
+        if (!prefs.favoriteGenres.includes(g)) {
+          prefs.favoriteGenres.push(g);
+        }
+      });
+    } else {
+      prefs.likedMovies = prefs.likedMovies.filter(
+        (id) => id.toString() !== movieId
+      );
+
+      const remainingMovies = await Movie.find({
+        _id: { $in: prefs.likedMovies },
+      });
+
+      const genreSet = new Set<string>();
+
+      remainingMovies.forEach((m) => {
+        m.genre.forEach((g: string) => genreSet.add(g));
+      });
+
+      prefs.favoriteGenres = Array.from(genreSet);
+    }
+
+    await prefs.save();
+
+    // FIXED MovieInteraction logic
+    if (!isAlreadyFavorite) {
+      // FAVORITE → CREATE interaction
+      await MovieInteraction.create({
+        userId,
+        movieId,
+        action: "favorite",
+      });
+    } else {
+      // UNFAVORITE → DELETE interaction
+      await MovieInteraction.deleteOne({
+        userId,
+        movieId,
+        action: "favorite",
+      });
+    }
 
     return NextResponse.json({
       success: true,
-      favoriteMovies: updatedFavorites,
-      message: isNowFavorite
-        ? "Movie added to favorites!"
-        : "Movie removed from favorites!",
+      isFavorite: !isAlreadyFavorite,
+      favoriteMovies: favorites,
     });
+
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ message: "Server error" }, { status: 500 });
+    console.error("Favorites API error:", err);
+    return NextResponse.json(
+      { message: "Server error" },
+      { status: 500 }
+    );
   }
 }

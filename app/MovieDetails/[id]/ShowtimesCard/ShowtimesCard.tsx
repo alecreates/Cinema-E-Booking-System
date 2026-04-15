@@ -64,7 +64,7 @@ useEffect(()=> {
               }}
               onClick={() =>
                 router.push(
-                  `/BookingPage?movie=${encodeURIComponent(
+                  `/BookingPage?movieID=${movie._id}&movie=${encodeURIComponent(
                     movie.title
                   )}&time=${encodeURIComponent(
                     showtime.timeSlot

@@ -25,6 +25,7 @@ const CheckoutPage = () => {
   const { currentUser } = useUser();
 
   const movie = searchParams.get("movie") || "Movie Title";
+  const movieID = searchParams.get("movieID") || "Movie ID";
   const date = searchParams.get("date") || "Date";
   const time = searchParams.get("time") || "Time";
   const hall = searchParams.get("hall") || "Main Hall";
@@ -74,6 +75,7 @@ const CheckoutPage = () => {
     }
 
     const params = new URLSearchParams({
+      movieID,
       movie,
       date,
       time,
