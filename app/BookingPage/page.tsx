@@ -21,6 +21,7 @@ const BookingPage = () => {
   const rows = searchParams.get("rows");
   const seatsPerRow = searchParams.get("seatsPerRow");
   const showId = searchParams.get("showId");
+  //const seatId = searchParams.get("seatId")?.split(",").filter(Boolean) || [];
   const [tickets, setTickets] = useState({
     adult: 0,
     child: 0,
@@ -53,14 +54,19 @@ useEffect(() => {
   //}
   
 
-    
+  const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
 
-  const toggleSeat = (seat: string) => {
+  const toggleSeat = (seat: string, seatId: string) => {
     setSelectedSeats((prev) =>
       prev.includes(seat)
         ? prev.filter((s) => s !== seat)
         : [...prev, seat]
+    );
+    setSelectedSeatIds((prev) =>
+    prev.includes(seatId)
+      ? prev.filter((s) => s !== seatId)
+      : [...prev,seatId]
     );
   };
 
@@ -104,6 +110,7 @@ useEffect(() => {
       rows: rows || "rows",
       seatsPerRow: seatsPerRow || "seatsPerRow",
       showId: showId || "showId",
+      seatId: selectedSeatIds.join(","),
       seats: selectedSeats.join(","),
       adult: String(tickets.adult),
       child: String(tickets.child),
@@ -228,7 +235,7 @@ useEffect(() => {
                     key={seat._id}
                     onClick={() => {
                       if (!bookedSeatIds.includes(seat._id.toString())) {
-                        toggleSeat(`${seat.row}${seat.number}`);
+                        toggleSeat(`${seat.row}${seat.number}`, seat._id.toString());
                       }
                     }}
                     style={{

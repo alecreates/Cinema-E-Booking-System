@@ -5,13 +5,13 @@ const TicketSchema = new Schema(
         bookingId:{
             type: Schema.Types.ObjectId,
             ref: 'Booking',
-            required: true
+            required: false
         },
-        seatId:{
+        seatId:[{
             type: Schema.Types.ObjectId,
             ref: 'Seat',
             required: true
-        },
+        }],
         showId:{
             type: Schema.Types.ObjectId,
             ref: 'Show',

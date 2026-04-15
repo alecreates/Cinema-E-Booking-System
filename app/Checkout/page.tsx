@@ -30,6 +30,9 @@ const CheckoutPage = () => {
   const time = searchParams.get("time") || "Time";
   const hall = searchParams.get("hall") || "Main Hall";
   const seats = searchParams.get("seats")?.split(",").filter(Boolean) || [];
+  const showId = searchParams.get("showId") || "showId";
+  const seatId = searchParams.get("seatId")?.split(",").filter(Boolean) || [];
+
 
   const ticketCounts = useMemo(
     () => ({
@@ -80,6 +83,8 @@ const CheckoutPage = () => {
       date,
       time,
       hall,
+      showId,
+      seatId: seatId.join(","),
       seats: seats.join(","),
       adult: String(ticketCounts.adult),
       child: String(ticketCounts.child),

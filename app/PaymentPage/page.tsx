@@ -39,6 +39,8 @@ const PaymentPage = () => {
   const email = searchParams.get("email") || "";
   const seats = searchParams.get("seats")?.split(",").filter(Boolean) || [];
   const subtotal = searchParams.get("subtotal") || "0.00";
+  const showId = searchParams.get("showId");
+  const seatId = searchParams.get("seatId")?.split(",").filter(Boolean) || [];
   const [cards, setCards] = useState<SavedCard[]>([]);
   const [selectedCardId, setSelectedCardId] = useState("");
   const [loadingCards, setLoadingCards] = useState(true);
@@ -142,6 +144,26 @@ const PaymentPage = () => {
       setCheckoutError("We couldn't send the confirmation email. Please try checkout again.");
     } finally {
       setIsSubmitting(false);
+    }
+    const ticketType = tickets.flatMap(({ type, count }) => Array(count).fill(type));
+    try{
+      for (let i = 0 ;i < seatId.length;i ++){
+        await fetch("/api/ticket",{
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            //bookingId: null,
+            seatId: seatId[i],
+            showId: showId,
+            type: ticketType[i].toUpperCase()
+          })
+
+        })
+      }
+    }catch(error){
+      console.error("Ticket creation failed:", error);
     }
   };
 
