@@ -217,7 +217,6 @@ useEffect(() => {
         <Col xs={11} md={10} lg={8}>
           <Card className="p-4 shadow-sm text-center">
             <h6 className="mb-3">Select Your Seats</h6>
-
             <div
               style={{
                 display: "grid",

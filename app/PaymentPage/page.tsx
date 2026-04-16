@@ -145,6 +145,26 @@ const PaymentPage = () => {
     } finally {
       setIsSubmitting(false);
     }
+    let booking;
+    try{
+      const bookingRes = await fetch("/api/booking",{
+        method: "POST",
+        headers:{
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          customerId: currentUser?.id,
+          promotionId: null,
+          paymentCardId: selectedCardId,
+          showId: showId,
+          total:subtotal,
+          bookingDate: new Date()
+        })
+      })
+      booking = await bookingRes.json()
+    }catch(error){
+      console.error("Ticket creation failed:", error);
+    }
     const ticketType = tickets.flatMap(({ type, count }) => Array(count).fill(type));
     try{
       for (let i = 0 ;i < seatId.length;i ++){
@@ -154,7 +174,7 @@ const PaymentPage = () => {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            //bookingId: null,
+            bookingId: booking._id ,
             seatId: seatId[i],
             showId: showId,
             type: ticketType[i].toUpperCase()
