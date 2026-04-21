@@ -9,9 +9,9 @@ import { useUser } from "@/app/context/UserContext";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 
 const HomePage = () => {
-  const router = useRouter(); 
+  const router = useRouter();
   const { currentUser, setCurrentUser, logout } = useUser();
-  
+
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -37,10 +37,10 @@ const HomePage = () => {
   }, []);
 
   useEffect(() => {
-  if (currentUser === null) {
-    router.replace("/"); // send to login if user is not logged in
-  }
-}, [currentUser, router]);
+    if (currentUser === null) {
+      router.replace("/"); // send to login if user is not logged in
+    }
+  }, [currentUser, router]);
 
   const allGenres = [...new Set(movies.flatMap((movie) => movie.genre))];
   const genreOptions = allGenres.map(g => ({ label: g, value: g }));
@@ -74,21 +74,21 @@ const HomePage = () => {
         },
         body: JSON.stringify({
           userId: currentUser.id,
-          movieId: movie_Id, 
+          movieId: movie_Id,
         }),
-    });
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) throw new Error(data.message);
+      if (!res.ok) throw new Error(data.message);
 
-    setCurrentUser({
-      ...currentUser,
-      favoriteMovies: data.favoriteMovies,
-    });
-  } catch (err) {
-    console.error("Failed to update favorites:", err);
-  }
+      setCurrentUser({
+        ...currentUser,
+        favoriteMovies: data.favoriteMovies,
+      });
+    } catch (err) {
+      console.error("Failed to update favorites:", err);
+    }
   };
 
   const renderMovieCard = (movie: Movie) => (
@@ -141,16 +141,39 @@ const HomePage = () => {
         <Col xs={11} md={10} lg={8}>
           <Card className="p-3 shadow-sm d-flex flex-row justify-content-between align-items-center">
             <h4 className="mb-0">🎬 Cinema E-Booking System</h4>
+
             <div>
-              <Button variant="outline-secondary" size="sm" className="me-2" onClick={() => router.push("/Profile")}>
-                Profile
-              </Button>
-              <Button variant="outline-danger" size="sm" onClick={() => {
-                logout();
-                router.push("/");
-                }}>
-                Logout
-              </Button>
+              {!isClient ? null : currentUser ? (
+                <>
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    className="me-2"
+                    onClick={() => router.push("/Profile")}
+                  >
+                    Profile
+                  </Button>
+
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={() => {
+                      logout();
+                      router.push("/");
+                    }}
+                  >
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={() => router.push("/Login")}
+                >
+                  Login
+                </Button>
+              )}
             </div>
           </Card>
         </Col>

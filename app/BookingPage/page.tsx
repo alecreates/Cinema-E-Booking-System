@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Alert, Container, Row, Col, Card, Button, Badge, Form } from "react-bootstrap";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useUser } from "@/app/context/UserContext";
 
 const PRICES = {
   adult: 12.99,
@@ -21,38 +22,39 @@ const BookingPage = () => {
   const rows = searchParams.get("rows");
   const seatsPerRow = searchParams.get("seatsPerRow");
   const showId = searchParams.get("showId");
+  const { currentUser } = useUser();
   //const seatId = searchParams.get("seatId")?.split(",").filter(Boolean) || [];
   const [tickets, setTickets] = useState({
     adult: 0,
     child: 0,
     senior: 0,
   });
-const [seats, setSeats] = useState<any[]>([]);
-const [bookedSeatIds, setBookedSeatIds] = useState<string[]>([]);
+  const [seats, setSeats] = useState<any[]>([]);
+  const [bookedSeatIds, setBookedSeatIds] = useState<string[]>([]);
 
-useEffect(() => {
+  useEffect(() => {
     if (showId) {
-        fetch(`/api/seats/${showId}`)
-            .then((res) => res.json())
-            .then((data) => {
-                setSeats(data.seats);
-                const ids = data.tickets.map((t: any) => t.seatId.toString());
-                console.log("bookedSeatIds:", ids);
-                console.log("seat ids:", data.seats.map((s: any) => s._id.toString()));
-                setBookedSeatIds(data.tickets.map((t: any) => t.seatId.toString()));
-            })
-            .catch((err) => console.error("Failed to fetch seats", err));
+      fetch(`/api/seats/${showId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setSeats(data.seats);
+          const ids = data.tickets.map((t: any) => t.seatId.toString());
+          console.log("bookedSeatIds:", ids);
+          console.log("seat ids:", data.seats.map((s: any) => s._id.toString()));
+          setBookedSeatIds(data.tickets.map((t: any) => t.seatId.toString()));
+        })
+        .catch((err) => console.error("Failed to fetch seats", err));
     }
-}, [showId]);
+  }, [showId]);
   //const seats: string[] = [];
   //for(let i = 0; i < Number(rows); i ++){
-    //for(let j = 0; j < Number(seatsPerRow); j ++){
-      //const letter = `${String.fromCharCode(65 + i)}${j+1}`;
-      //seats.push(letter)
+  //for(let j = 0; j < Number(seatsPerRow); j ++){
+  //const letter = `${String.fromCharCode(65 + i)}${j+1}`;
+  //seats.push(letter)
 
-    //}
   //}
-  
+  //}
+
 
   const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
@@ -64,9 +66,9 @@ useEffect(() => {
         : [...prev, seat]
     );
     setSelectedSeatIds((prev) =>
-    prev.includes(seatId)
-      ? prev.filter((s) => s !== seatId)
-      : [...prev,seatId]
+      prev.includes(seatId)
+        ? prev.filter((s) => s !== seatId)
+        : [...prev, seatId]
     );
   };
 
@@ -97,19 +99,17 @@ useEffect(() => {
         : "";
 
   const handleProceedToCheckout = () => {
-    if (seatSelectionError) {
-      return;
-    }
+    if (seatSelectionError) return;
 
     const params = new URLSearchParams({
-      movieID: movieID || "Movie ID",
-      movie: movie || "Movie Title",
-      time: time || "Time",
-      date: date || "Date",
-      hall: hall || "Main Hall",
-      rows: rows || "rows",
-      seatsPerRow: seatsPerRow || "seatsPerRow",
-      showId: showId || "showId",
+      movieID: movieID || "",
+      movie: movie || "",
+      time: time || "",
+      date: date || "",
+      hall: hall || "",
+      rows: rows || "",
+      seatsPerRow: seatsPerRow || "",
+      showId: showId || "",
       seatId: selectedSeatIds.join(","),
       seats: selectedSeats.join(","),
       adult: String(tickets.adult),
@@ -117,7 +117,14 @@ useEffect(() => {
       senior: String(tickets.senior),
     });
 
-    router.push(`/Checkout?${params.toString()}`);
+    const checkoutUrl = `/Checkout?${params.toString()}`;
+
+    if (!currentUser) {
+      router.push(`/Login?redirect=${encodeURIComponent(checkoutUrl)}`);
+      return;
+    }
+
+    router.push(checkoutUrl);
   };
 
   return (

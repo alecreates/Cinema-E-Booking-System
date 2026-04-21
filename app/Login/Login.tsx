@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Container, Row, Col, Card, Form, Button, Alert } from "react-bootstrap";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/app/context/UserContext";
 
 const Login = () => {
@@ -15,6 +15,9 @@ const Login = () => {
     const [error, setError] = useState("");
 
     const { setCurrentUser } = useUser();
+
+    const searchParams = useSearchParams();
+    const redirect = searchParams.get("redirect");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -48,7 +51,7 @@ const Login = () => {
             if (data.user.userType === "admin") {
                 router.push("/AdminMenu");
             } else {
-                router.push("/HomePage");
+                router.push(redirect || "/HomePage");
             }
 
         } catch (err) {
