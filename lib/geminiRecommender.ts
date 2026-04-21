@@ -40,7 +40,7 @@ ${movies
   .join("\n")}
 
 TASK:
-Recommend 5 movies the user has NOT already liked.
+Recommend 4 movies the user has NOT already liked.
 
 IMPORTANT RULES:
 - Use ONLY movieId from the catalog
@@ -59,7 +59,7 @@ FORMAT:
 
     // 4. Gemini model (FIXED)
     const model = genAI.getGenerativeModel({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.5-flash-lite",
     });
 
     // 5. Generate response

@@ -14,9 +14,9 @@ const HomePage = () => {
 
   const [movies, setMovies] = useState<Movie[]>([]);
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
+  const [loading, setLoading] = useState(true);
   const [recLoading, setRecLoading] = useState(false);
 
-  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [selectedGenres, setSelectedGenres] = useState<
     readonly { label: string; value: string }[]
@@ -51,28 +51,54 @@ const HomePage = () => {
     }
   }, [currentUser, router]);
 
-  /* ---------------- FETCH RECOMMENDATIONS ---------------- */
+  /* ---------------- FETCH RECOMMENDATIONS (WITH CACHE) ---------------- */
   useEffect(() => {
     const fetchRecommendations = async () => {
       if (!currentUser) return;
 
+      const cacheKey = `recs_${currentUser.id}`;
+
+      // Try cache first
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          const ONE_HOUR = 1000 * 60 * 60;
+
+          if (Date.now() - parsed.timestamp < ONE_HOUR) {
+            setRecommendations(parsed.data);
+            return;
+          } else {
+            localStorage.removeItem(cacheKey);
+          }
+        } catch {
+          localStorage.removeItem(cacheKey);
+        }
+      }
+
+      // Fetch from API
       try {
         setRecLoading(true);
 
-        const res = await fetch(
-          `/api/recommendations/${currentUser.id}`
+        const res = await fetch(`/api/recommendations/${currentUser.id}`);
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error);
+
+        const recMovies = data.results;
+
+        // Save to cache
+        localStorage.setItem(
+          cacheKey,
+          JSON.stringify({
+            data: recMovies,
+            timestamp: Date.now(),
+          })
         );
 
-        if (!res.ok) {
-          setRecommendations([]);
-          return;
-        }
-
-        const data = await res.json();
-        setRecommendations(data.results || []);
+        setRecommendations(recMovies);
       } catch (err) {
-        console.error("Failed recommendations:", err);
-        setRecommendations([]);
+        console.error("Failed to fetch recommendations:", err);
       } finally {
         setRecLoading(false);
       }
@@ -82,45 +108,32 @@ const HomePage = () => {
   }, [currentUser]);
 
   /* ---------------- FILTERING ---------------- */
-  const allGenres = [...new Set(movies.flatMap((movie) => movie.genre))];
-  const genreOptions = allGenres.map((g) => ({
-    label: g,
-    value: g,
-  }));
+  const allGenres = [...new Set(movies.flatMap((m) => m.genre))];
+  const genreOptions = allGenres.map((g) => ({ label: g, value: g }));
 
   const filterMovies = movies.filter(
     (m) =>
       m.title.toLowerCase().includes(query.toLowerCase()) &&
       (selectedGenres.length > 0
-        ? selectedGenres.every((genre) =>
-            m.genre.includes(genre.value)
-          )
+        ? selectedGenres.every((g) => m.genre.includes(g.value))
         : true) &&
       (selectedDate
-        ? m.showtimes.some(
-            (showtime) => showtime.date === selectedDate
-          )
+        ? m.showtimes?.some((s) => s.date === selectedDate)
         : true)
   );
 
-  const nowShowing = filterMovies.filter(
-    (m) => m.status === "now_showing"
-  );
-
-  const comingSoon = filterMovies.filter(
-    (m) => m.status === "coming_soon"
-  );
+  const nowShowing = filterMovies.filter((m) => m.status === "now_showing");
+  const comingSoon = filterMovies.filter((m) => m.status === "coming_soon");
 
   const noResults =
-    !loading &&
-    nowShowing.length === 0 &&
-    comingSoon.length === 0;
+    !loading && nowShowing.length === 0 && comingSoon.length === 0;
 
   /* ---------------- FAVORITES ---------------- */
-  const isFavorite = (movie_Id: string) =>
-    currentUser?.favoriteMovies?.includes(movie_Id);
+  const isFavorite = (movieId: string) => {
+    return currentUser?.favoriteMovies?.includes(movieId);
+  };
 
-  const toggleFavorite = async (movie_Id: string) => {
+  const toggleFavorite = async (movieId: string) => {
     if (!currentUser) return;
 
     try {
@@ -129,7 +142,7 @@ const HomePage = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: currentUser.id,
-          movieId: movie_Id,
+          movieId,
         }),
       });
 
@@ -140,6 +153,9 @@ const HomePage = () => {
         ...currentUser,
         favoriteMovies: data.favoriteMovies,
       });
+
+      // Clear cache so recommendations refresh
+      localStorage.removeItem(`recs_${currentUser.id}`);
     } catch (err) {
       console.error("Failed to update favorites:", err);
     }
@@ -161,23 +177,16 @@ const HomePage = () => {
         <Card.Body className="d-flex flex-column">
           <div className="d-flex justify-content-between align-items-center mb-2">
             <Card.Title className="mb-0">{movie.title}</Card.Title>
-
             {currentUser && (
               <span
                 style={{
                   cursor: "pointer",
-                  color: isFavorite(movie.id)
-                    ? "red"
-                    : "gray",
                   fontSize: "1.2rem",
+                  color: isFavorite(movie.id) ? "red" : "gray",
                 }}
                 onClick={() => toggleFavorite(movie.id)}
               >
-                {isFavorite(movie.id) ? (
-                  <FaHeart />
-                ) : (
-                  <FaRegHeart />
-                )}
+                {isFavorite(movie.id) ? <FaHeart /> : <FaRegHeart />}
               </span>
             )}
           </div>
@@ -187,10 +196,9 @@ const HomePage = () => {
           </Card.Text>
 
           <Button
+            variant="primary"
             className="mt-auto"
-            onClick={() =>
-              router.push(`/MovieDetails/${movie.id}`)
-            }
+            onClick={() => router.push(`/MovieDetails/${movie.id}`)}
           >
             View Movie Details
           </Button>
@@ -199,57 +207,36 @@ const HomePage = () => {
     </Col>
   );
 
-  /* ---------------- SMALL RECOMMENDATION BOX ---------------- */
+  /* ---------------- SIDEBAR ---------------- */
   const renderSidebar = () => (
-    <Card
-      className="p-2 shadow-sm"
-      style={{
-        fontSize: "0.8rem",
-        position: "sticky",
-        top: "20px",
-      }}
-    >
-      <h6 className="mb-2">🎯 Recommended by AI</h6>
+    <Card className="p-3 shadow-sm">
+      <h6 className="mb-3">🎯 For You</h6>
 
-      {recLoading && (
-        <p className="text-muted">Loading...</p>
-      )}
+      {recLoading && <p className="text-muted">Loading...</p>}
 
       {!recLoading && recommendations.length === 0 && (
-        <p className="text-muted">No recommendations</p>
+        <p className="text-muted">No recommendations yet</p>
       )}
 
       {recommendations.slice(0, 4).map((movie) => (
         <div
           key={movie.id}
           className="d-flex align-items-center mb-2"
-          style={{ cursor: "pointer" }}
-          onClick={() =>
-            router.push(`/MovieDetails/${movie.id}`)
-          }
         >
           <img
             src={movie.posterUrl}
             alt={movie.title}
             style={{
               width: "40px",
-              height: "55px",
+              height: "60px",
               objectFit: "cover",
               marginRight: "8px",
               borderRadius: "4px",
             }}
           />
-
-          <div>
-            <div style={{ fontSize: "0.75rem" }}>
-              {movie.title}
-            </div>
-            <div
-              style={{
-                fontSize: "0.65rem",
-                color: "gray",
-              }}
-            >
+          <div style={{ fontSize: "0.8rem" }}>
+            <div>{movie.title}</div>
+            <div style={{ color: "gray", fontSize: "0.7rem" }}>
               {movie.genre.slice(0, 2).join(", ")}
             </div>
           </div>
@@ -264,28 +251,40 @@ const HomePage = () => {
       {/* HEADER */}
       <Row className="mb-4 justify-content-center">
         <Col xs={11} md={10} lg={10}>
-          <Card className="p-3 shadow-sm d-flex flex-row justify-content-between">
-            <h4>🎬 Cinema E-Booking System</h4>
+          <Card className="p-3 shadow-sm d-flex flex-row justify-content-between align-items-center">
+            <h4 className="mb-0">🎬 Cinema E-Booking System</h4>
 
             <div>
-              <Button
-                size="sm"
-                className="me-2"
-                onClick={() => router.push("/Profile")}
-              >
-                Profile
-              </Button>
+              {!isClient ? null : currentUser ? (
+                <>
+                  <Button
+                    size="sm"
+                    className="me-2"
+                    onClick={() => router.push("/Profile")}
+                  >
+                    Profile
+                  </Button>
 
-              <Button
-                size="sm"
-                variant="danger"
-                onClick={() => {
-                  logout();
-                  router.push("/Login");
-                }}
-              >
-                Logout
-              </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => {
+                      localStorage.removeItem(`recs_${currentUser.id}`);
+                      logout();
+                      router.push("/");
+                    }}
+                  >
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => router.push("/Login")}
+                >
+                  Login
+                </Button>
+              )}
             </div>
           </Card>
         </Col>
@@ -318,9 +317,7 @@ const HomePage = () => {
               <Form.Control
                 type="date"
                 value={selectedDate}
-                onChange={(e) =>
-                  setSelectedDate(e.target.value)
-                }
+                onChange={(e) => setSelectedDate(e.target.value)}
               />
             </Form>
           </Card>
@@ -331,30 +328,24 @@ const HomePage = () => {
       <Row className="justify-content-center">
         <Col xs={11} md={10} lg={10}>
           <Row>
-            {/* MAIN */}
             <Col lg={9}>
               {nowShowing.length > 0 && (
                 <>
                   <h5>Now Showing</h5>
-                  <Row>
-                    {nowShowing.map(renderMovieCard)}
-                  </Row>
+                  <Row>{nowShowing.map(renderMovieCard)}</Row>
                 </>
               )}
 
               {comingSoon.length > 0 && (
                 <>
                   <h5 className="mt-4">Coming Soon</h5>
-                  <Row>
-                    {comingSoon.map(renderMovieCard)}
-                  </Row>
+                  <Row>{comingSoon.map(renderMovieCard)}</Row>
                 </>
               )}
 
               {noResults && <p>No results found.</p>}
             </Col>
 
-            {/* SIDEBAR (SMALL) */}
             <Col lg={3}>{renderSidebar()}</Col>
           </Row>
         </Col>
