@@ -18,3 +18,23 @@ export async function POST(reqest: NextRequest){
         }
     }
 
+
+export async function GET() {
+    try {
+        await dbConnect();
+
+        const bookings = await Booking.find()
+            .sort({ bookingDate: -1 })
+            .lean();
+
+        return NextResponse.json(bookings, { status: 200 });
+    
+    } catch(error) {
+        console.error("GET /api/booking error:", error);
+        return NextResponse.json(
+            { message: "Failed to fetch bookings" },
+            { status: 500 }
+        );
+    }
+}
+

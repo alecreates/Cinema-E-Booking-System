@@ -25,6 +25,9 @@ const Profile = () => {
 
   const [editingCard, setEditingCard] = useState<any | null>(null);
 
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+
   const [showCardModal, setShowCardModal] = useState(false);
   const [newCard, setNewCard] = useState({
     cardNumber: "",
@@ -134,6 +137,67 @@ const Profile = () => {
     );
 
     setFavoriteMovies(favs);
+  }, [currentUser, allMovies]);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!currentUser?.id || allMovies.length === 0) return;
+
+      try {
+        setLoadingOrders(true);
+
+        const [bookingRes, showRes, roomRes] = await Promise.all([
+          fetch("/api/booking"),
+          fetch("/api/shows"),
+          fetch("/api/showrooms"),
+        ]);
+
+        const bookings = await bookingRes.json();
+        const shows = await showRes.json();
+        const rooms = await roomRes.json();
+
+        const userBookings = bookings
+          .filter((b: any) => b.customerId === currentUser.id)
+          .sort(
+            (a: any, b: any) =>
+              new Date(b.bookingDate).getTime() -
+              new Date(a.bookingDate).getTime()
+          );
+
+        const builtOrders = userBookings.map((booking: any) => {
+          const show = shows.find(
+            (s: any) => s._id === booking.showId
+          );
+
+          const movie = allMovies.find(
+            (m) => m.id === show?.movieId
+          );
+
+          const room = rooms.find(
+            (r: any) => r._id === show?.showRoomId
+          );
+
+          const total = booking.total;
+
+
+          return {
+            ...booking,
+            movieTitle: movie?.title || "Unknown Movie",
+            hallName: room?.name || "Main Hall",
+            total,
+          };
+        });
+
+        setOrders(builtOrders);
+
+      } catch (err) {
+        console.error("Failed to load orders:", err);
+      } finally {
+        setLoadingOrders(false);
+      }
+    };
+
+    fetchOrders();
   }, [currentUser, allMovies]);
 
   // ---------- Profile Handlers ----------
@@ -572,6 +636,46 @@ const Profile = () => {
                   )}
                 </Card>
               ))}
+
+              <hr className="mt-4" />
+              <h5>Order History</h5>
+              {loadingOrders ? (
+                <Card className="p-3 shadow-sm">
+                  Loading orders...
+                </Card>
+              ) : orders.length === 0 ? (
+                <Card className="p-3 shadow-sm">
+                  <span className="text-muted">
+                    No previous bookings found.
+                  </span>
+                </Card>
+              ) : (
+                orders.map((order) => (
+                  <Card
+                    key={order._id}
+                    className="p-3 mb-2 shadow-sm"
+                  >
+                    <div className="fw-bold">
+                      {order.movieTitle}
+                    </div>
+
+                    <div className="text-muted">
+                      {order.hallName}
+                    </div>
+
+                    <div className="text-muted">
+                      Purchased:{" "}
+                      {new Date(
+                        order.bookingDate
+                      ).toLocaleDateString()}
+                    </div>
+
+                    <div className="text-muted">
+                      Total: ${order.total.toFixed(2)}
+                    </div>
+                  </Card>
+                ))
+              )}
             </Form>
           </Card>
         </Col>
