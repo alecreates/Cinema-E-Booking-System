@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Button, Card, Col, Container, Form, ListGroup, Row } from "react-bootstrap";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/app/context/UserContext";
@@ -19,6 +19,15 @@ const TICKET_LABELS: Record<TicketType, string> = {
   senior: "Senior",
 };
 
+const getCurrentTimestamp = () => new Date().getTime();
+
+const formatLockTime = (milliseconds: number) => {
+  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+};
+
 const CheckoutPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -32,6 +41,7 @@ const CheckoutPage = () => {
   const seats = searchParams.get("seats")?.split(",").filter(Boolean) || [];
   const showId = searchParams.get("showId") || "showId";
   const seatId = searchParams.get("seatId")?.split(",").filter(Boolean) || [];
+  const lockExpiresAt = Number(searchParams.get("lockExpiresAt") || 0);
 
 
   const ticketCounts = useMemo(
@@ -53,6 +63,7 @@ const CheckoutPage = () => {
 
   const [email, setEmail] = useState(currentUser?.email || "");
   const [error, setError] = useState("");
+  const [lockTimeRemaining, setLockTimeRemaining] = useState(0);
 
   const ticketSummary = (Object.keys(ticketCounts) as TicketType[])
     .filter((type) => ticketCounts[type] > 0)
@@ -63,8 +74,26 @@ const CheckoutPage = () => {
       label: TICKET_LABELS[type],
     }));
 
+  useEffect(() => {
+    if (!lockExpiresAt) return;
+
+    const updateTimer = () => {
+      setLockTimeRemaining(lockExpiresAt - getCurrentTimestamp());
+    };
+
+    updateTimer();
+    const intervalId = window.setInterval(updateTimer, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [lockExpiresAt]);
+
   const handleProceedToPayment = async () => {
     setError("");
+
+    if (lockExpiresAt && lockExpiresAt <= getCurrentTimestamp()) {
+      setError("Your seat reservation expired. Please go back and select seats again.");
+      return;
+    }
 
     if (!email.trim()) {
       setError("Please confirm an email address before proceeding.");
@@ -91,6 +120,7 @@ const CheckoutPage = () => {
       senior: String(ticketCounts.senior),
       subtotal: subtotal.toFixed(2),
       email: email.trim(),
+      lockExpiresAt: String(lockExpiresAt),
     });
 
     router.push(`/PaymentPage?${params.toString()}`);
@@ -142,6 +172,16 @@ const CheckoutPage = () => {
                       <strong>${subtotal.toFixed(2)}</strong>
                     </ListGroup.Item>
                   </ListGroup>
+                  {lockExpiresAt > 0 && lockTimeRemaining > 0 && (
+                    <Alert variant="info" className="mt-3 mb-0">
+                      Seats are reserved for this session for {formatLockTime(lockTimeRemaining)}.
+                    </Alert>
+                  )}
+                  {lockExpiresAt > 0 && lockTimeRemaining <= 0 && (
+                    <Alert variant="warning" className="mt-3 mb-0">
+                      Your seat reservation expired. Go back to select seats again.
+                    </Alert>
+                  )}
                 </Col>
 
                 <Col md={5}>

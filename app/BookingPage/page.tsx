@@ -11,6 +11,70 @@ const PRICES = {
   senior: 9.99,
 };
 
+const SEAT_LOCK_DURATION_MS = 5 * 60 * 1000;
+
+type SeatLock = {
+  seatId: string;
+  seatLabel: string;
+  sessionId: string;
+  expiresAt: number;
+};
+
+type Seat = {
+  _id: string;
+  row: string;
+  number: number;
+};
+
+type TicketSeat = string | { toString: () => string };
+
+type TicketRecord = {
+  seatId: TicketSeat | TicketSeat[];
+};
+
+const getCurrentTimestamp = () => new Date().getTime();
+
+const getSeatLockKey = (showId: string) => `seatLocks:${showId}`;
+
+const getSeatLockSessionId = () => {
+  if (typeof window === "undefined") return "";
+
+  const existingSessionId = sessionStorage.getItem("seatLockSessionId");
+  if (existingSessionId) return existingSessionId;
+
+  const newSessionId = crypto.randomUUID();
+  sessionStorage.setItem("seatLockSessionId", newSessionId);
+  return newSessionId;
+};
+
+const readSeatLocks = (key: string) => {
+  if (!key) return [];
+
+  try {
+    return JSON.parse(localStorage.getItem(key) || "[]") as SeatLock[];
+  } catch {
+    return [];
+  }
+};
+
+const writeSeatLocks = (key: string, locks: SeatLock[]) => {
+  if (!key) return;
+  localStorage.setItem(key, JSON.stringify(locks));
+};
+
+const normalizeTicketSeatIds = (tickets: TicketRecord[]) =>
+  tickets.flatMap((ticket) => {
+    const seatIds = Array.isArray(ticket.seatId) ? ticket.seatId : [ticket.seatId];
+    return seatIds.map((seatId) => seatId.toString());
+  });
+
+const formatLockTime = (milliseconds: number) => {
+  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+};
+
 const BookingPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -23,14 +87,20 @@ const BookingPage = () => {
   const seatsPerRow = searchParams.get("seatsPerRow");
   const showId = searchParams.get("showId");
   const { currentUser } = useUser();
+  const [seatLockSessionId, setSeatLockSessionId] = useState("");
+  const seatLockKey = showId ? getSeatLockKey(showId) : "";
   //const seatId = searchParams.get("seatId")?.split(",").filter(Boolean) || [];
   const [tickets, setTickets] = useState({
     adult: 0,
     child: 0,
     senior: 0,
   });
-  const [seats, setSeats] = useState<any[]>([]);
+  const [seats, setSeats] = useState<Seat[]>([]);
   const [bookedSeatIds, setBookedSeatIds] = useState<string[]>([]);
+  const [lockedSeatIds, setLockedSeatIds] = useState<string[]>([]);
+  const [seatLockMessage, setSeatLockMessage] = useState("");
+  const [selectedLockExpiresAt, setSelectedLockExpiresAt] = useState<number | null>(null);
+  const [lockTimeRemaining, setLockTimeRemaining] = useState(0);
 
   useEffect(() => {
     if (showId) {
@@ -38,10 +108,10 @@ const BookingPage = () => {
         .then((res) => res.json())
         .then((data) => {
           setSeats(data.seats);
-          const ids = data.tickets.map((t: any) => t.seatId.toString());
+          const ids = normalizeTicketSeatIds(data.tickets);
           console.log("bookedSeatIds:", ids);
-          console.log("seat ids:", data.seats.map((s: any) => s._id.toString()));
-          setBookedSeatIds(data.tickets.map((t: any) => t.seatId.toString()));
+          console.log("seat ids:", data.seats.map((s: Seat) => s._id.toString()));
+          setBookedSeatIds(ids);
         })
         .catch((err) => console.error("Failed to fetch seats", err));
     }
@@ -59,17 +129,122 @@ const BookingPage = () => {
   const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
 
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setSeatLockSessionId(getSeatLockSessionId());
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
+  useEffect(() => {
+    if (!seatLockKey || !seatLockSessionId) return;
+
+    const refreshLocks = () => {
+      const now = getCurrentTimestamp();
+      const activeLocks = readSeatLocks(seatLockKey).filter(
+        (lock) => lock.expiresAt > now
+      );
+
+      writeSeatLocks(seatLockKey, activeLocks);
+      setLockedSeatIds(
+        activeLocks
+          .filter((lock) => lock.sessionId !== seatLockSessionId)
+          .map((lock) => lock.seatId)
+      );
+
+      const currentSessionLocks = activeLocks.filter(
+        (lock) =>
+          lock.sessionId === seatLockSessionId &&
+          selectedSeatIds.includes(lock.seatId)
+      );
+
+      const nextExpiresAt =
+        currentSessionLocks.length > 0
+          ? Math.min(...currentSessionLocks.map((lock) => lock.expiresAt))
+          : null;
+
+      setSelectedLockExpiresAt(nextExpiresAt);
+      setLockTimeRemaining(nextExpiresAt ? nextExpiresAt - now : 0);
+    };
+
+    refreshLocks();
+    const intervalId = window.setInterval(refreshLocks, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [seatLockKey, seatLockSessionId, selectedSeatIds]);
+
+  const reserveSeatForSession = (seatLabel: string, seatId: string) => {
+    if (!seatLockKey) return getCurrentTimestamp() + SEAT_LOCK_DURATION_MS;
+
+    const now = getCurrentTimestamp();
+    const expiresAt = now + SEAT_LOCK_DURATION_MS;
+    const activeLocks = readSeatLocks(seatLockKey).filter(
+      (lock) => lock.expiresAt > now && lock.seatId !== seatId
+    );
+
+    writeSeatLocks(seatLockKey, [
+      ...activeLocks,
+      {
+        seatId,
+        seatLabel,
+        sessionId: seatLockSessionId,
+        expiresAt,
+      },
+    ]);
+
+    return expiresAt;
+  };
+
+  const releaseSeatLock = (seatId: string) => {
+    if (!seatLockKey) return;
+
+    const now = getCurrentTimestamp();
+    const activeLocks = readSeatLocks(seatLockKey).filter(
+      (lock) =>
+        lock.expiresAt > now &&
+        !(lock.seatId === seatId && lock.sessionId === seatLockSessionId)
+    );
+
+    writeSeatLocks(seatLockKey, activeLocks);
+  };
+
   const toggleSeat = (seat: string, seatId: string) => {
-    setSelectedSeats((prev) =>
-      prev.includes(seat)
-        ? prev.filter((s) => s !== seat)
-        : [...prev, seat]
-    );
-    setSelectedSeatIds((prev) =>
-      prev.includes(seatId)
-        ? prev.filter((s) => s !== seatId)
-        : [...prev, seatId]
-    );
+    setSeatLockMessage("");
+
+    if (bookedSeatIds.includes(seatId)) {
+      setSeatLockMessage("That seat is already booked.");
+      return;
+    }
+
+    if (lockedSeatIds.includes(seatId)) {
+      setSeatLockMessage("That seat is temporarily reserved by another session.");
+      return;
+    }
+
+    const isSelected = selectedSeatIds.includes(seatId);
+
+    if (!isSelected && ticketCount === 0) {
+      setSeatLockMessage("Select tickets before choosing seats.");
+      return;
+    }
+
+    if (!isSelected && selectedSeatIds.length >= ticketCount) {
+      setSeatLockMessage(`You can only select ${ticketCount} seat${ticketCount === 1 ? "" : "s"} for this order.`);
+      return;
+    }
+
+    if (isSelected) {
+      releaseSeatLock(seatId);
+      setSelectedSeats((prev) => prev.filter((s) => s !== seat));
+      setSelectedSeatIds((prev) => prev.filter((s) => s !== seatId));
+      return;
+    }
+
+    const expiresAt = reserveSeatForSession(seat, seatId);
+    setSelectedLockExpiresAt((current) => current ? Math.min(current, expiresAt) : expiresAt);
+    setSelectedSeats((prev) => [...prev, seat]);
+    setSelectedSeatIds((prev) => [...prev, seatId]);
   };
 
   const updateTicket = (type: keyof typeof tickets, value: number) => {
@@ -87,9 +262,7 @@ const BookingPage = () => {
     );
   }, [tickets]);
 
-  const ticketCount = useMemo(() => {
-    return tickets.adult + tickets.child + tickets.senior;
-  }, [tickets]);
+  const ticketCount = tickets.adult + tickets.child + tickets.senior;
 
   const seatSelectionError =
     ticketCount === 0
@@ -100,6 +273,27 @@ const BookingPage = () => {
 
   const handleProceedToCheckout = () => {
     if (seatSelectionError) return;
+
+    const lockExpiresAt = getCurrentTimestamp() + SEAT_LOCK_DURATION_MS;
+    if (seatLockKey) {
+      const now = getCurrentTimestamp();
+      const selectedSeatSet = new Set(selectedSeatIds);
+      const activeLocks = readSeatLocks(seatLockKey).filter(
+        (lock) =>
+          lock.expiresAt > now &&
+          !(lock.sessionId === seatLockSessionId && selectedSeatSet.has(lock.seatId))
+      );
+
+      const refreshedLocks = selectedSeatIds.map((seatId, index) => ({
+        seatId,
+        seatLabel: selectedSeats[index] || seatId,
+        sessionId: seatLockSessionId,
+        expiresAt: lockExpiresAt,
+      }));
+
+      writeSeatLocks(seatLockKey, [...activeLocks, ...refreshedLocks]);
+      setSelectedLockExpiresAt(lockExpiresAt);
+    }
 
     const params = new URLSearchParams({
       movieID: movieID || "",
@@ -115,6 +309,7 @@ const BookingPage = () => {
       adult: String(tickets.adult),
       child: String(tickets.child),
       senior: String(tickets.senior),
+      lockExpiresAt: String(lockExpiresAt),
     });
 
     const checkoutUrl = `/Checkout?${params.toString()}`;
@@ -235,26 +430,27 @@ const BookingPage = () => {
             >
               {seats.map((seat) => {
                 const isSelected = selectedSeats.includes(`${seat.row}${seat.number}`);
+                const seatId = seat._id.toString();
+                const isBooked = bookedSeatIds.includes(seatId);
+                const isLocked = lockedSeatIds.includes(seatId);
 
                 return (
                   <div
                     key={seat._id}
                     onClick={() => {
-                      if (!bookedSeatIds.includes(seat._id.toString())) {
-                        toggleSeat(`${seat.row}${seat.number}`, seat._id.toString());
-                      }
+                      toggleSeat(`${seat.row}${seat.number}`, seatId);
                     }}
                     style={{
                       width: "40px",
                       height: "40px",
                       borderRadius: "5px",
-                      background: isSelected ? "#0d6efd" : bookedSeatIds.includes(seat._id.toString()) ? "#dc3545" : "#6c757d",
+                      background: isSelected ? "#0d6efd" : isBooked ? "#dc3545" : isLocked ? "#fd7e14" : "#6c757d",
                       color: "white",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       fontSize: "0.8rem",
-                      cursor: bookedSeatIds.includes(seat._id.toString()) ? "not-allowed" : "pointer",
+                      cursor: isBooked || isLocked ? "not-allowed" : "pointer",
                     }}
                   >
                     {seat.row}{seat.number}
@@ -269,6 +465,25 @@ const BookingPage = () => {
                 ? selectedSeats.join(", ")
                 : "None"}
             </p>
+
+            {selectedSeats.length > 0 && selectedLockExpiresAt && lockTimeRemaining > 0 && (
+              <Alert variant="info" className="py-2 text-start">
+                Selected seats are reserved for this session for {formatLockTime(lockTimeRemaining)}.
+              </Alert>
+            )}
+
+            {seatLockMessage && (
+              <Alert variant="secondary" className="py-2 text-start">
+                {seatLockMessage}
+              </Alert>
+            )}
+
+            <div className="d-flex flex-wrap gap-3 justify-content-center text-muted small mb-3">
+              <span><Badge bg="primary">Blue</Badge> Selected</span>
+              <span><Badge bg="secondary">Gray</Badge> Available</span>
+              <span><Badge bg="danger">Red</Badge> Booked</span>
+              <span><Badge bg="warning" text="dark">Orange</Badge> Reserved</span>
+            </div>
 
             {seatSelectionError && (
               <Alert variant="warning" className="py-2 text-start">

@@ -26,6 +26,15 @@ const PRICE_MAP: Record<TicketType, number> = {
   senior: 9.99,
 };
 
+const getCurrentTimestamp = () => new Date().getTime();
+
+const formatLockTime = (milliseconds: number) => {
+  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+};
+
 const PaymentPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -41,6 +50,7 @@ const PaymentPage = () => {
   const subtotal = searchParams.get("subtotal") || "0.00";
   const showId = searchParams.get("showId");
   const seatId = searchParams.get("seatId")?.split(",").filter(Boolean) || [];
+  const lockExpiresAt = Number(searchParams.get("lockExpiresAt") || 0);
   const [cards, setCards] = useState<SavedCard[]>([]);
   const [selectedCardId, setSelectedCardId] = useState("");
   const [loadingCards, setLoadingCards] = useState(true);
@@ -48,6 +58,7 @@ const PaymentPage = () => {
   const [checkoutError, setCheckoutError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [lockTimeRemaining, setLockTimeRemaining] = useState(0);
 
   const tickets = (["adult", "child", "senior"] as TicketType[])
     .map((type) => ({
@@ -95,8 +106,51 @@ const PaymentPage = () => {
     fetchCards();
   }, [currentUser]);
 
+  useEffect(() => {
+    if (!lockExpiresAt) return;
+
+    const updateTimer = () => {
+      setLockTimeRemaining(lockExpiresAt - getCurrentTimestamp());
+    };
+
+    updateTimer();
+    const intervalId = window.setInterval(updateTimer, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [lockExpiresAt]);
+
+  const clearCurrentSessionSeatLocks = () => {
+    if (!showId || typeof window === "undefined") return;
+
+    const seatLockSessionId = sessionStorage.getItem("seatLockSessionId");
+    if (!seatLockSessionId) return;
+
+    const lockKey = `seatLocks:${showId}`;
+    const selectedSeatIds = new Set(seatId);
+
+    try {
+      const activeLocks = JSON.parse(localStorage.getItem(lockKey) || "[]").filter(
+        (lock: { seatId: string; sessionId: string; expiresAt: number }) =>
+          lock.expiresAt > getCurrentTimestamp() &&
+          !(
+            lock.sessionId === seatLockSessionId &&
+            selectedSeatIds.has(lock.seatId)
+          )
+      );
+
+      localStorage.setItem(lockKey, JSON.stringify(activeLocks));
+    } catch {
+      localStorage.removeItem(lockKey);
+    }
+  };
+
   const handleCheckout = async () => {
     setCheckoutError("");
+
+    if (lockExpiresAt && lockExpiresAt <= getCurrentTimestamp()) {
+      setCheckoutError("Your seat reservation expired. Please go back and select seats again.");
+      return;
+    }
 
     if (!selectedCardId) {
       setCheckoutError("Please select a saved payment method to continue.");
@@ -139,6 +193,7 @@ const PaymentPage = () => {
         }),
       });
       setEmailSent(true);
+      clearCurrentSessionSeatLocks();
     } catch (error) {
       console.error("Checkout email failed:", error);
       setCheckoutError("We couldn't send the confirmation email. Please try checkout again.");
@@ -253,6 +308,18 @@ const PaymentPage = () => {
                   <strong>${subtotal}</strong>
                 </ListGroup.Item>
               </ListGroup>
+
+              {lockExpiresAt > 0 && lockTimeRemaining > 0 && !emailSent && (
+                <Alert variant="info" className="mt-3 mb-0">
+                  Seats are reserved for this session for {formatLockTime(lockTimeRemaining)}.
+                </Alert>
+              )}
+
+              {lockExpiresAt > 0 && lockTimeRemaining <= 0 && !emailSent && (
+                <Alert variant="warning" className="mt-3 mb-0">
+                  Your seat reservation expired. Go back to select seats again.
+                </Alert>
+              )}
 
               <Card className="mt-4 border-0 bg-body-tertiary">
                 <Card.Body>
