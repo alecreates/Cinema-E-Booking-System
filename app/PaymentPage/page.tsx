@@ -3,27 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Badge, Button, Card, Col, Container, Form, ListGroup, Row, Spinner } from "react-bootstrap";
 import { useRouter, useSearchParams } from "next/navigation";
-import emailjs from "@emailjs/browser";
 import { useUser } from "@/app/context/UserContext";
-
-type TicketType = "adult" | "child" | "senior";
-type SavedCard = {
-  _id: string;
-  billingAddress: string;
-  expirationDate: string;
-  cardNumberMasked: string;
-};
+import { paymentFacade, SavedCard, TicketType } from "@/lib/payment/PaymentFacade";
 
 const TICKET_LABELS: Record<TicketType, string> = {
   adult: "Adult",
   child: "Child",
   senior: "Senior",
-};
-
-const PRICE_MAP: Record<TicketType, number> = {
-  adult: 12.99,
-  child: 8.99,
-  senior: 9.99,
 };
 
 const getCurrentTimestamp = () => new Date().getTime();
@@ -84,13 +70,7 @@ const PaymentPage = () => {
         setLoadingCards(true);
         setCardsError("");
 
-        const res = await fetch(`/api/paymentcards?userId=${currentUser.id}`);
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || "Failed to load payment methods.");
-        }
-
+        const data = await paymentFacade.getSavedPaymentMethods(currentUser.id);
         setCards(data);
         if (data.length > 0) {
           setSelectedCardId(data[0]._id);
@@ -119,126 +99,39 @@ const PaymentPage = () => {
     return () => window.clearInterval(intervalId);
   }, [lockExpiresAt]);
 
-  const clearCurrentSessionSeatLocks = () => {
-    if (!showId || typeof window === "undefined") return;
-
-    const seatLockSessionId = sessionStorage.getItem("seatLockSessionId");
-    if (!seatLockSessionId) return;
-
-    const lockKey = `seatLocks:${showId}`;
-    const selectedSeatIds = new Set(seatId);
-
-    try {
-      const activeLocks = JSON.parse(localStorage.getItem(lockKey) || "[]").filter(
-        (lock: { seatId: string; sessionId: string; expiresAt: number }) =>
-          lock.expiresAt > getCurrentTimestamp() &&
-          !(
-            lock.sessionId === seatLockSessionId &&
-            selectedSeatIds.has(lock.seatId)
-          )
-      );
-
-      localStorage.setItem(lockKey, JSON.stringify(activeLocks));
-    } catch {
-      localStorage.removeItem(lockKey);
-    }
-  };
-
   const handleCheckout = async () => {
     setCheckoutError("");
 
-    if (lockExpiresAt && lockExpiresAt <= getCurrentTimestamp()) {
-      setCheckoutError("Your seat reservation expired. Please go back and select seats again.");
-      return;
-    }
-
-    if (!selectedCardId) {
-      setCheckoutError("Please select a saved payment method to continue.");
-      return;
-    }
-
     setIsSubmitting(true);
 
-    const ticketBreakdown = tickets
-      .map(({ type, count }) => `${TICKET_LABELS[type]}: ${count} x $${PRICE_MAP[type].toFixed(2)}`)
-      .join("\n");
-
-    const orderMessage = [
-      `Movie: ${movie}`,
-      `Showtime: ${date} at ${time}`,
-      `Auditorium: ${hall}`,
-      `Seats: ${seats.join(", ")}`,
-      `Tickets:\n${ticketBreakdown}`,
-      `Subtotal before tax: $${subtotal}`,
-      selectedCard ? `Payment Method: ${selectedCard.cardNumberMasked}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-
     try {
-      await emailjs.send("service_nbvsrvg", "template_2tb6c16", {
-        name: currentUser?.name || "Guest",
+      await paymentFacade.processCheckout({
+        currentUser,
+        movieId: movieID,
+        movieTitle: movie,
+        showDate: date,
+        showTime: time,
+        hall,
         email,
-        message: orderMessage,
-      });
-      await fetch("/api/interactions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: currentUser?.id,
-          movieId: movieID,
-          action: "purchase",
-        }),
+        subtotal,
+        showId,
+        seatIds: seatId,
+        selectedSeats: seats,
+        selectedCardId,
+        selectedCard,
+        lockExpiresAt,
+        tickets,
       });
       setEmailSent(true);
-      clearCurrentSessionSeatLocks();
     } catch (error) {
-      console.error("Checkout email failed:", error);
-      setCheckoutError("We couldn't send the confirmation email. Please try checkout again.");
+      console.error("Checkout failed:", error);
+      setCheckoutError(
+        error instanceof Error
+          ? error.message
+          : "We couldn't complete checkout. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
-    }
-    let booking;
-    try{
-      const bookingRes = await fetch("/api/booking",{
-        method: "POST",
-        headers:{
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          customerId: currentUser?.id,
-          promotionId: null,
-          paymentCardId: selectedCardId,
-          showId: showId,
-          total:subtotal,
-          bookingDate: new Date()
-        })
-      })
-      booking = await bookingRes.json()
-    }catch(error){
-      console.error("Ticket creation failed:", error);
-    }
-    const ticketType = tickets.flatMap(({ type, count }) => Array(count).fill(type));
-    try{
-      for (let i = 0 ;i < seatId.length;i ++){
-        await fetch("/api/ticket",{
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            bookingId: booking._id ,
-            seatId: seatId[i],
-            showId: showId,
-            type: ticketType[i].toUpperCase()
-          })
-
-        })
-      }
-    }catch(error){
-      console.error("Ticket creation failed:", error);
     }
   };
 
