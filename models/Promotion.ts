@@ -1,17 +1,23 @@
-import mongoose, {Schema,model,models} from "mongoose";
+import mongoose from "mongoose";
 
-const PromotionSchema = new Schema(
-    {
-        promoCode:{
-            type: String,
-            required: true
-        },
-        discount:{
-            type: Number,
-            required: true
-        }
-    },
-    {timestamps:true}
-)
-const Promotion = models.Promotion || model("Promotion",PromotionSchema);
-export default Promotion
+const PromotionSchema = new mongoose.Schema({
+  promoCode: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+
+  type: {
+    type: String,
+    enum: ["percentage", "flat"],
+    required: true,
+  },
+
+  value: {
+    type: Number,
+    required: true,
+  },
+});
+
+export default mongoose.models.Promotion ||
+  mongoose.model("Promotion", PromotionSchema);

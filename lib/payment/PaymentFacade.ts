@@ -1,6 +1,7 @@
 "use client";
 
 import emailjs from "@emailjs/browser";
+import { applyPromotions } from "@/lib/pricing/applyPromotions";
 
 export type TicketType = "adult" | "child" | "senior";
 
@@ -37,6 +38,7 @@ export type ProcessCheckoutInput = {
   selectedCard: SavedCard | null;
   lockExpiresAt: number;
   tickets: CheckoutTicket[];
+  promoCode?: string; // ✅ user-entered promo
 };
 
 type CreatedBooking = {
@@ -67,18 +69,50 @@ export class PaymentFacade {
     this.validateSeatLock(input.lockExpiresAt);
     this.validatePaymentMethod(input.selectedCardId);
 
-    const booking = await this.createBooking(input);
+    // ✅ 1. Convert subtotal
+    const subtotalNumber = parseFloat(input.subtotal);
+
+    // ✅ 2. Fetch promotions (filtered by promoCode)
+    const promotions = await this.fetchPromotions(input.promoCode);
+
+    // ✅ 3. Apply decorator pattern
+    const finalTotal = applyPromotions(subtotalNumber, promotions);
+
+    // ✅ 4. Create booking with FINAL total
+    const booking = await this.createBooking(input, finalTotal);
+
     await this.createTickets(booking._id, input);
     await this.recordPurchaseInteraction(input);
-    await this.sendConfirmationEmail(input);
+    await this.sendConfirmationEmail(input, finalTotal);
+
     this.clearSeatLocks(input.showId, input.seatIds);
 
     return { emailSent: true, bookingId: booking._id };
   }
 
+  // ✅ FETCH PROMOS USING PROMO CODE
+  private async fetchPromotions(promoCode?: string) {
+    if (!promoCode) return [];
+
+    try {
+      const res = await fetch(`/api/promotions?code=${promoCode}`);
+      const data = await res.json();
+
+      if (!res.ok) return [];
+
+      // expected: [{ type: "percent" | "flat", value: number }]
+      return data.data || [];
+    } catch (err) {
+      console.error("Failed to fetch promotions:", err);
+      return [];
+    }
+  }
+
   private validateSeatLock(lockExpiresAt: number) {
     if (lockExpiresAt && lockExpiresAt <= getCurrentTimestamp()) {
-      throw new Error("Your seat reservation expired. Please go back and select seats again.");
+      throw new Error(
+        "Your seat reservation expired. Please go back and select seats again."
+      );
     }
   }
 
@@ -88,7 +122,10 @@ export class PaymentFacade {
     }
   }
 
-  private async createBooking(input: ProcessCheckoutInput): Promise<CreatedBooking> {
+  private async createBooking(
+    input: ProcessCheckoutInput,
+    total: number
+  ): Promise<CreatedBooking> {
     const response = await fetch("/api/booking", {
       method: "POST",
       headers: {
@@ -96,10 +133,10 @@ export class PaymentFacade {
       },
       body: JSON.stringify({
         customerId: input.currentUser?.id,
-        promotionId: null,
+        promotionCode: input.promoCode || null, // ✅ store code
         paymentCardId: input.selectedCardId,
         showId: input.showId,
-        total: input.subtotal,
+        total: total,
         bookingDate: new Date(),
       }),
     });
@@ -159,7 +196,10 @@ export class PaymentFacade {
     }
   }
 
-  private async sendConfirmationEmail(input: ProcessCheckoutInput) {
+  private async sendConfirmationEmail(
+    input: ProcessCheckoutInput,
+    finalTotal: number
+  ) {
     const ticketBreakdown = input.tickets
       .map(
         ({ type, count }) =>
@@ -173,8 +213,12 @@ export class PaymentFacade {
       `Auditorium: ${input.hall}`,
       `Seats: ${input.selectedSeats.join(", ")}`,
       `Tickets:\n${ticketBreakdown}`,
-      `Subtotal before tax: $${input.subtotal}`,
-      input.selectedCard ? `Payment Method: ${input.selectedCard.cardNumberMasked}` : "",
+      `Subtotal: $${input.subtotal}`,
+      input.promoCode ? `Promo Code: ${input.promoCode}` : "",
+      `Total after promotions: $${finalTotal.toFixed(2)}`,
+      input.selectedCard
+        ? `Payment Method: ${input.selectedCard.cardNumberMasked}`
+        : "",
     ]
       .filter(Boolean)
       .join("\n");
@@ -196,7 +240,9 @@ export class PaymentFacade {
     const selectedSeatIds = new Set(seatIds);
 
     try {
-      const activeLocks = JSON.parse(localStorage.getItem(lockKey) || "[]").filter(
+      const activeLocks = JSON.parse(
+        localStorage.getItem(lockKey) || "[]"
+      ).filter(
         (lock: { seatId: string; sessionId: string; expiresAt: number }) =>
           lock.expiresAt > getCurrentTimestamp() &&
           !(

@@ -8,9 +8,10 @@ export async function POST(req: NextRequest) {
     await dbConnect();
 
     const body = await req.json();
-    const { promoCode, discount } = body;
+    const { promoCode, type, value } = body;
 
-    if (!promoCode || discount == null) {
+    // ✅ validation (UPDATED FOR DECORATOR SYSTEM)
+    if (!promoCode || !type || value == null) {
       return NextResponse.json(
         { success: false, message: "Missing promo data" },
         { status: 400 }
@@ -30,9 +31,11 @@ export async function POST(req: NextRequest) {
           "template_w4asuw3",
           {
             name: user.name,
-            email: user.email, // IMPORTANT (must match template)
+            email: user.email,
+
+            // ✅ NEW PROMO FIELDS (NO MORE discount)
             promoCode,
-            discount,
+            discount: value,
           },
           {
             publicKey: process.env.EMAILJS_PUBLIC_KEY!,

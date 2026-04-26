@@ -28,16 +28,19 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
 
-    if (!body.promoCode || body.discount == null) {
+    const { promoCode, type, value } = body;
+
+    if (!promoCode || !type || value == null) {
       return NextResponse.json(
-        { success: false, message: "Missing required fields" },
+        { message: "Missing required fields" },
         { status: 400 }
       );
     }
 
     const newPromo = await Promotion.create({
-      promoCode: body.promoCode,
-      discount: body.discount,
+      promoCode,
+      type,
+      value,
     });
 
     return NextResponse.json({
@@ -45,11 +48,10 @@ export async function POST(req: NextRequest) {
       data: newPromo,
     }, { status: 201 });
 
-  } catch (error) {
-    console.error("POST promotions error:", error);
-
+  } catch (err) {
+    console.error(err);
     return NextResponse.json(
-      { success: false, message: "Failed to create promotion" },
+      { message: "Failed to create promotion" },
       { status: 500 }
     );
   }

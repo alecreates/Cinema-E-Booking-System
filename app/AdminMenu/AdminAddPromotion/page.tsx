@@ -3,17 +3,23 @@
 import React, { useState } from "react";
 import { Container, Row, Col, Card, Form, Button, Alert } from "react-bootstrap";
 
+type PromoType = "percentage" | "flat";
+
 const AdminAddPromos = () => {
   const [formData, setFormData] = useState({
     promoCode: "",
     discount: "",
+    type: "percentage" as PromoType,
+    minSpend: "",
   });
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -28,13 +34,15 @@ const AdminAddPromos = () => {
     setLoading(true);
 
     try {
-      // 1. create promo
       const res = await fetch("/api/promotions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          promoCode: formData.promoCode,
-          discount: Number(formData.discount),
+          promoCode: formData.promoCode.toUpperCase().trim(),
+          type: formData.type,
+          value: Number(formData.discount),
+          minSpend: formData.minSpend ? Number(formData.minSpend) : 0,
+          active: true,
         }),
       });
 
@@ -42,13 +50,13 @@ const AdminAddPromos = () => {
 
       if (!res.ok) throw new Error(promoRes.message);
 
-      // 2. trigger email sending (SERVER SIDE)
       const emailRes = await fetch("/api/promotions/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           promoCode: promoRes.data.promoCode,
-          discount: promoRes.data.discount,
+          type: promoRes.data.type,
+          value: promoRes.data.value,
         }),
       });
 
@@ -58,15 +66,14 @@ const AdminAddPromos = () => {
         throw new Error(emailData.message);
       }
 
-      setMessage(
-        `Promo created + emails sent to ${emailData.sent} users`
-      );
+      setMessage(`Promo created + emails sent to ${emailData.sent} users`);
 
       setFormData({
         promoCode: "",
         discount: "",
+        type: "percentage",
+        minSpend: "",
       });
-
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Error creating promotion");
@@ -86,11 +93,10 @@ const AdminAddPromos = () => {
             {error && <Alert variant="danger">{error}</Alert>}
 
             <Form onSubmit={handleSubmit}>
-              
+
               <Form.Group className="mb-3">
                 <Form.Label>Promo Code</Form.Label>
                 <Form.Control
-                
                   name="promoCode"
                   value={formData.promoCode}
                   onChange={handleChange}
@@ -98,14 +104,40 @@ const AdminAddPromos = () => {
                 />
               </Form.Group>
 
+              {/* NEW: promo type selector */}
               <Form.Group className="mb-3">
-                <Form.Label>Discount (%)</Form.Label>
+                <Form.Label>Discount Type</Form.Label>
+                <Form.Select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                >
+                  <option value="percentage">Percent (%)</option>
+                  <option value="flat">Flat ($)</option>
+                </Form.Select>
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label>
+                  {formData.type === "percentage" ? "Discount (%)" : "Discount ($)"}
+                </Form.Label>
                 <Form.Control
                   type="number"
                   name="discount"
                   value={formData.discount}
                   onChange={handleChange}
                   required
+                />
+              </Form.Group>
+
+              {/* OPTIONAL: future rule support */}
+              <Form.Group className="mb-3">
+                <Form.Label>Minimum Spend (optional)</Form.Label>
+                <Form.Control
+                  type="number"
+                  name="minSpend"
+                  value={formData.minSpend}
+                  onChange={handleChange}
                 />
               </Form.Group>
 
