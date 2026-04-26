@@ -1,85 +1,53 @@
+// app/api/register/route.ts
+
 import { NextResponse } from "next/server";
-import bcrypt from "bcrypt";
-import { dbConnect } from "../../../lib/mongodb";
-import User from "../../../models/User";
+import { registerUser } from "@/services/AuthService";
 
-import crypto from "crypto";
-
-
-
+/**
+ * Registers a new user.
+ *
+ * Reads registration data from the request body,
+ * calls the service layer, and returns the created
+ * user account information.
+ *
+ * @param req - The incoming HTTP request.
+ * @returns A JSON response containing registration
+ * status or an error message.
+ */
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, email, password, promoSub, address } = body;
 
-        if (!name || !email || !password) {
-            return NextResponse.json(
-                { message: "Name, email, and password are required" },
-                { status: 400 }
-            );
-        }
-
-        if (password.length < 6) {
-            return NextResponse.json(
-                { message: "Password must be at least 6 characters long" },
-                { status: 400 }
-            );
-        }
-
-        await dbConnect();
-
-        const existingUser = await User.findOne({
-            email: email.toLowerCase().trim(),
-        });
-
-        if (existingUser) {
-            return NextResponse.json(
-                { message: "Email already in use" },
-                { status: 409 }
-            );
-        }
-
-        const passwordHash = await bcrypt.hash(password, 10);
-
-        // generate verification token for email identity verification
-        const verificationToken = crypto.randomBytes(32).toString("hex");
-
-        const user = await User.create({
-            userType: "customer",
-            name: name.trim(),
-            email: email.toLowerCase().trim(),
-            passwordHash,
-            status: "inactive",
-            promoSub: promoSub ?? false,
-            verificationToken,
-            address: address.trim(),
-            resetPasswordTokenHash: null,
-            resetPasswordExpiresAt: null
-        });
-
-        console.log("Saved user in DB:", await User.findOne({ email: email.toLowerCase().trim() }));
+        const user = await registerUser(body);
 
         return NextResponse.json(
             {
                 message: "User registered successfully",
-                user: {
-                    id: user._id,
-                    userType: user.userType,
-                    name: user.name,
-                    email: user.email,
-                    status: user.status,
-                    promoSub: user.promoSub,
-                    verificationToken,
-                    address: user.address
-                },
+                user,
             },
             { status: 201 }
         );
-    } catch (error) {
+    } catch (error: any) {
         console.error("Register error:", error);
+
+        const status =
+            error.message ===
+                "Name, email, and password are required" ||
+                error.message ===
+                "Password must be at least 6 characters long"
+                ? 400
+                : error.message ===
+                    "Email already in use"
+                    ? 409
+                    : 500;
+
         return NextResponse.json(
-            { message: "Internal server error" },
-            { status: 500 }
+            {
+                message:
+                    error.message ||
+                    "Internal server error",
+            },
+            { status }
         );
     }
 }
