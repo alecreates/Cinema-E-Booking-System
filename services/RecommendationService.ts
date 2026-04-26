@@ -28,8 +28,7 @@ export async function getUserRecommendations(
     }
 
     const aiResults = await getRecommendations(
-        user,
-        movies
+        user
     );
 
     const recommendedIds = aiResults
