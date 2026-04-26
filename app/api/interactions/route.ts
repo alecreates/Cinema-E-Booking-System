@@ -1,68 +1,43 @@
-import { NextResponse } from "next/server";
-import { dbConnect } from "@/lib/mongodb";
-import MovieInteraction from "@/models/MovieInteractions";
-import User from "@/models/User";
-import Movie from "@/models/Movie";
+// app/api/interactions/route.ts
 
+import { NextResponse } from "next/server";
+import { createMovieInteraction } from "@/services/MovieInteractionService";
+
+/**
+ * Creates a movie interaction.
+ *
+ * Reads request body data, calls the service layer,
+ * and stores a movie interaction event.
+ *
+ * @param req - The incoming HTTP request.
+ * @returns A JSON response containing the created interaction
+ * or an error message.
+ */
 export async function POST(req: Request) {
   try {
-    const { userId, movieId, action } = await req.json();
+    const body = await req.json();
 
-    await dbConnect();
-
-    if (!userId || !movieId || !action) {
-      return NextResponse.json(
-        { message: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    const allowedActions = ["view", "purchase"];
-
-    if (!allowedActions.includes(action)) {
-      return NextResponse.json(
-        { message: "Invalid action type" },
-        { status: 400 }
-      );
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return NextResponse.json(
-        { message: "User not found" },
-        { status: 404 }
-      );
-    }
-
-    const movie = await Movie.findById(movieId);
-    if (!movie) {
-      return NextResponse.json(
-        { message: "Movie not found" },
-        { status: 404 }
-      );
-    }
-
-    const interaction = await MovieInteraction.create({
-      userId,
-      movieId,
-      action,
-      metadata: {
-        timestamp: new Date(),
-        genres: movie.genre,
-      },
-    });
+    const interaction = await createMovieInteraction(body);
 
     return NextResponse.json({
       success: true,
       interaction,
     });
+  } catch (error: any) {
+    console.error("Interaction API error:", error);
 
-  } catch (err) {
-    console.error("Interaction API error:", err);
+    const status =
+      error.message === "Missing required fields" ||
+        error.message === "Invalid action type"
+        ? 400
+        : error.message === "User not found" ||
+          error.message === "Movie not found"
+          ? 404
+          : 500;
 
     return NextResponse.json(
-      { message: "Server error" },
-      { status: 500 }
+      { message: error.message || "Server error" },
+      { status }
     );
   }
 }
