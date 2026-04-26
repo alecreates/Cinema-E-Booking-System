@@ -1,31 +1,55 @@
+// app/api/seats/[id]/route.ts
+
 import { NextResponse } from "next/server";
-import { dbConnect } from "@/lib/mongodb";
-import Seat from "@/models/Seat";
-import Ticket from "@/models/Ticket";
-import Show from "@/models/Show";
+import { getSeatsByShowId } from "@/services/SeatService";
 
 type RouteParams = {
-    params: Promise<{id: string}>;
+    params: Promise<{ id: string }>;
 };
 
-export async function GET(_request: Request, {params} : RouteParams){
-    try{
-        const {id} = await params;
-        await dbConnect();
-        const show = await Show.findById(id);
-        if (!show) {
-            return NextResponse.json({ message: "Show not found" }, { status: 404 });
-        }
-        const seats = await Seat.find({showRoomId: show.showRoomId});
-        const tickets = await Ticket.find({showId: id});
+/**
+ * Retrieves seats and tickets for a show.
+ *
+ * Reads the show ID from route parameters, calls the
+ * service layer, and returns seat availability data.
+ *
+ * @param _request - The incoming HTTP request.
+ * @param context - Route context containing params.
+ * @returns A JSON response containing seats and tickets
+ * or an error message.
+ */
+export async function GET(
+    _request: Request,
+    { params }: RouteParams
+) {
+    try {
+        const { id } = await params;
 
-        return NextResponse.json({seats, tickets}, {status: 200})
-    }
-    catch(error){
-        console.error("GET /api/seats/[id] error:", error);
+        const result =
+            await getSeatsByShowId(id);
+
         return NextResponse.json(
-            { message: "Failed to fetch" },
-            { status: 500 }
+            result,
+            { status: 200 }
+        );
+    } catch (error: any) {
+        console.error(
+            "GET /api/seats/[id] error:",
+            error
+        );
+
+        const status =
+            error.message === "Show not found"
+                ? 404
+                : 500;
+
+        return NextResponse.json(
+            {
+                message:
+                    error.message ||
+                    "Failed to fetch",
+            },
+            { status }
         );
     }
 }
