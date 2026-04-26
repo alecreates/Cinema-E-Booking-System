@@ -1,19 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
-import { dbConnect } from "../../../lib/mongodb";
-import Movie from "../../../models/Movie";
+// app/api/movies/route.ts
 
+import { NextRequest, NextResponse } from "next/server";
+import { getAllMovies, createMovie } from "@/services/MovieService";
+
+/**
+ * Retrieves all movies.
+ *
+ * Calls the service layer to fetch all movies
+ * and returns them as JSON.
+ *
+ * @returns A JSON response containing all movies or an error message.
+ */
 export async function GET() {
   try {
-    await dbConnect();
+    const movies = await getAllMovies();
 
-    const movies = await Movie.find().sort({ createdAt: -1 }).lean();
-
-    // Convert _id to string for frontend
-    const moviesWithId = movies.map(m => ({ ...m, id: m._id.toString() }));
-
-    return NextResponse.json({ data: moviesWithId }, { status: 200 });
+    return NextResponse.json({ data: movies }, { status: 200 });
   } catch (error) {
     console.error("GET /api/movies error:", error);
+
     return NextResponse.json(
       { message: "Failed to fetch movies" },
       { status: 500 }
@@ -21,31 +26,28 @@ export async function GET() {
   }
 }
 
-// add a movie to the DB
+/**
+ * Creates a new movie.
+ *
+ * Reads request body data, sends it to the service layer,
+ * and returns the created movie as JSON.
+ *
+ * @param req - The incoming HTTP request containing movie data.
+ * @returns A JSON response containing the created movie or an error message.
+ */
 export async function POST(req: NextRequest) {
   try {
-    await dbConnect();
-
     const body = await req.json();
 
-    if (!body.title) {
-      return NextResponse.json(
-        { message: "Title is required" },
-        { status: 400 }
-      );
-    }
+    const movie = await createMovie(body);
 
-    const newMovie = await Movie.create(body);
-
-    // Convert _id to string for frontend
-    const movieWithId = { ...newMovie.toObject(), id: newMovie._id.toString() };
-
-    return NextResponse.json(movieWithId, { status: 201 });
-  } catch (error) {
+    return NextResponse.json(movie, { status: 201 });
+  } catch (error: any) {
     console.error("POST /api/movies error:", error);
+
     return NextResponse.json(
-      { message: "Failed to create movie" },
-      { status: 500 }
+      { message: error.message || "Failed to create movie" },
+      { status: 400 }
     );
   }
 }
