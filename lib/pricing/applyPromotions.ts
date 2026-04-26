@@ -18,7 +18,7 @@ abstract class PromoDecorator extends PriceComponent {
   }
 }
 
-export class PercentagePromo extends PromoDecorator {
+class PercentagePromo extends PromoDecorator {
   constructor(component: PriceComponent, private percent: number) {
     super(component);
   }
@@ -28,7 +28,7 @@ export class PercentagePromo extends PromoDecorator {
   }
 }
 
-export class FlatPromo extends PromoDecorator {
+class FlatPromo extends PromoDecorator {
   constructor(component: PriceComponent, private amount: number) {
     super(component);
   }
@@ -38,15 +38,32 @@ export class FlatPromo extends PromoDecorator {
   }
 }
 
-export function applyPromotions(basePrice: number, promos: any[]) {
+async function getPromoFromAPI(code: string) {
+  if (!code) return null;
+
+  const res = await fetch(`/api/promotions/${code}`);
+
+  if (!res.ok) return null;
+
+  return res.json();
+}
+
+export async function applyPromotions(basePrice: number, promoCode: string) {
   let price: PriceComponent = new BasePrice(basePrice);
 
-  for (const promo of promos) {
-    if (promo.type === "percentage") {
-      price = new PercentagePromo(price, promo.value);
-    } else if (promo.type === "flat") {
-      price = new FlatPromo(price, promo.value);
-    }
+  const promo = await getPromoFromAPI(promoCode);
+
+  // ✅ REQUIRED FIX: prevent silent invalid promo objects
+  if (!promo || typeof promo.type !== "string" || typeof promo.value !== "number") {
+    return price.getTotal();
+  }
+
+  if (promo.type === "percentage") {
+    price = new PercentagePromo(price, promo.value);
+  }
+
+  if (promo.type === "flat") {
+    price = new FlatPromo(price, promo.value);
   }
 
   return Math.max(0, price.getTotal());
