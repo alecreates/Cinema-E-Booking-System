@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { dbConnect } from "../../../lib/mongodb";
-import Show from "@/models/Show";
-import mongoose from "mongoose";
+import { getAllShows, createShow } from "@/services/ShowService";
 
+/**
+ * Retrieves all shows.
+ *
+ * Calls the service layer to fetch every show record,
+ * sorted by show time, and returns the results as JSON.
+ *
+ * @returns A JSON response containing all shows or an error message.
+ */
 export async function GET() {
     try {
-        await dbConnect();
-
-        console.log("DB NAME:", Show.db.name);
-        console.log("COLLECTION:", Show.collection.name);
-
-        const shows = await Show.find()
-            .sort({ showTime: 1 })
-            .lean();
+        const shows = await getAllShows();
 
         return NextResponse.json(shows, { status: 200 });
     } catch (error) {
         console.error("GET /api/shows error:", error);
+
         return NextResponse.json(
             { message: "Failed to fetch shows" },
             { status: 500 }
@@ -24,71 +24,28 @@ export async function GET() {
     }
 }
 
+/**
+ * Creates a new show.
+ *
+ * Reads the request body, sends the data to the service layer,
+ * and returns the newly created show as JSON.
+ *
+ * @param req - The incoming HTTP request containing show data.
+ * @returns A JSON response containing the created show or an error message.
+ */
 export async function POST(req: NextRequest) {
     try {
-        await dbConnect();
-
         const body = await req.json();
-        const { showRoomId, movieId, timeSlot, date } = body;
 
-        // Basic validation
-        if (!showRoomId || !movieId || !timeSlot || !date) {
-            return NextResponse.json(
-                { message: "Missing required fields" },
-                { status: 400 }
-            );
-        }
-
-        // Validate ObjectIds
-        if (
-            !mongoose.Types.ObjectId.isValid(showRoomId) ||
-            !mongoose.Types.ObjectId.isValid(movieId)
-        ) {
-            return NextResponse.json(
-                { message: "Invalid movie or showroom ID" },
-                { status: 400 }
-            );
-        }
-
-        // Normalize date to check conflicts
-        const selectedDate = new Date(date);
-        const startOfDay = new Date(selectedDate.setHours(0, 0, 0, 0));
-        const endOfDay = new Date(selectedDate.setHours(23, 59, 59, 999));
-
-        // Conflict check
-        const existingShow = await Show.findOne({
-            showRoomId,
-            timeSlot,
-            date: {
-                $gte: startOfDay,
-                $lte: endOfDay,
-            },
-        });
-
-        if (existingShow) {
-            return NextResponse.json(
-                {
-                    message:
-                        "This time slot is already booked for the selected room on this date.",
-                },
-                { status: 400 }
-            );
-        }
-
-        // Create show
-        const newShow = await Show.create({
-            showRoomId,
-            movieId,
-            timeSlot,
-            date: selectedDate,
-        });
+        const newShow = await createShow(body);
 
         return NextResponse.json(newShow, { status: 201 });
-    } catch (error) {
+    } catch (error: any) {
         console.error("POST /api/shows error:", error);
+
         return NextResponse.json(
-            { message: "Failed to create show" },
-            { status: 500 }
+            { message: error.message || "Failed to create show" },
+            { status: 400 }
         );
     }
 }
