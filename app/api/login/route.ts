@@ -1,71 +1,50 @@
-import { NextResponse } from "next/server";
-import bcrypt from "bcrypt";
-import { dbConnect } from "@/lib/mongodb";
-import User from "@/models/User";
+// app/api/login/route.ts
 
+import { NextResponse } from "next/server";
+import { loginUser } from "@/services/AuthService";
+
+/**
+ * Logs a user into the system.
+ *
+ * Reads login credentials from the request body,
+ * calls the service layer for authentication,
+ * and returns user data on success.
+ *
+ * @param req - The incoming HTTP request.
+ * @returns A JSON response containing login status or error message.
+ */
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { email, password } = body;
 
-        if (!email || !password) {
-            return NextResponse.json(
-                { message: "Email and password are required" },
-                { status: 400 }
-            );
-        }
-
-        await dbConnect();
-
-        const user = await User.findOne({
-            email: email.toLowerCase().trim(),
-        });
-
-        if (!user) {
-            return NextResponse.json(
-                { message: "Invalid email or password" },
-                { status: 401 }
-            );
-        }
-
-        if (user.status !== "active") {
-            return NextResponse.json(
-                { message: "Account is not active. Please verify your email." },
-                { status: 403 }
-            );
-        }
-
-        const passwordMatch = await bcrypt.compare(password, user.passwordHash);
-
-        if (!passwordMatch) {
-            return NextResponse.json(
-                { message: "Invalid email or password" },
-                { status: 401 }
-            );
-            
-        }
+        const user = await loginUser(
+            body.email,
+            body.password
+        );
 
         return NextResponse.json(
             {
                 message: "Login successful",
-                user: {
-                    id: user._id,
-                    userType: user.userType,
-                    name: user.name,
-                    email: user.email,
-                    status: user.status,
-                    promoSub: user.promoSub,
-                    favoriteMovies: user.favoriteMovies,
-                    address: user.address
-                },
+                user,
             },
             { status: 200 }
         );
-    } catch (error) {
+    } catch (error: any) {
         console.error("Login error:", error);
+
+        const status =
+            error.message === "Email and password are required"
+                ? 400
+                : error.message ===
+                    "Account is not active. Please verify your email."
+                    ? 403
+                    : error.message === "Invalid email or password"
+                        ? 401
+                        : 500;
+
         return NextResponse.json(
-            { message: "Internal server error" },
-            { status: 500 }
+            { message: error.message || "Internal server error" },
+            { status }
         );
     }
 }
