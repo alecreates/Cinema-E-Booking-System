@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { dbConnect } from "@/lib/mongodb";
 import User from "@/models/User";
+import { createHash } from "node:crypto";
 
 
 /**
@@ -149,4 +150,69 @@ export async function registerUser(data: {
         verificationToken,
         address: user.address,
     };
+}
+
+/**
+ * Resets a user's password using a reset token.
+ *
+ * Validates request data, verifies the reset token,
+ * hashes the new password, updates the user password,
+ * and clears reset token fields.
+ *
+ * @param token - The raw password reset token.
+ * @param password - The new password.
+ * @param confirmPassword - The confirmation password.
+ * @returns A promise that resolves when reset is complete.
+ * @throws Error if validation fails or token is invalid.
+ */
+export async function resetPassword(
+    token: string,
+    password: string,
+    confirmPassword: string
+) {
+    if (!token || !password || !confirmPassword) {
+        throw new Error(
+            "Token, password, and confirm password are required."
+        );
+    }
+
+    if (password !== confirmPassword) {
+        throw new Error("Passwords do not match.");
+    }
+
+    if (password.length < 6) {
+        throw new Error(
+            "Password must be at least 6 characters long."
+        );
+    }
+
+    await dbConnect();
+
+    const tokenHash = createHash("sha256")
+        .update(token)
+        .digest("hex");
+
+    const user = await User.findOne({
+        resetPasswordTokenHash: tokenHash,
+        resetPasswordExpiresAt: {
+            $gt: new Date(),
+        },
+    });
+
+    if (!user) {
+        throw new Error(
+            "Invalid or expired reset token."
+        );
+    }
+
+    const passwordHash = await bcrypt.hash(
+        password,
+        10
+    );
+
+    user.passwordHash = passwordHash;
+    user.resetPasswordTokenHash = null;
+    user.resetPasswordExpiresAt = null;
+
+    await user.save();
 }
