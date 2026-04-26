@@ -1,86 +1,71 @@
+// app/api/paymentcards/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
-import { dbConnect } from "@/lib/mongodb";
-import PaymentCard from "@/models/PaymentCard";
+import {
+  createPaymentCard,
+  getPaymentCardsByUserId,
+} from "@/services/PaymentCardService";
 
-import { encrypt, decrypt } from "@/lib/encryption";
-
+/**
+ * Creates a payment card.
+ *
+ * Reads request body data, calls the service layer,
+ * and stores a new payment card.
+ *
+ * @param req - The incoming HTTP request.
+ * @returns A JSON response containing the created card
+ * or an error message.
+ */
 export async function POST(req: NextRequest) {
   try {
-    await dbConnect();
+    const body = await req.json();
 
-    const { customerId, cardNumber, billingAddress, expirationDate } =
-      await req.json();
+    const card = await createPaymentCard(body);
 
-    if (!customerId || !cardNumber || !billingAddress || !expirationDate) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
+    return NextResponse.json(card, { status: 201 });
+  } catch (error: any) {
+    const status =
+      error.message === "Missing required fields"
+        ? 400
+        : error.message ===
+          "Maximum of 3 payment cards allowed"
+          ? 403
+          : 500;
 
-    const cardCount = await PaymentCard.countDocuments({ customerId });
-
-    if (cardCount >= 3) {
-      return NextResponse.json(
-        { error: "Maximum of 3 payment cards allowed" },
-        { status: 403 }
-      );
-    }
-
-    // 🔒 ENCRYPT CARD NUMBER
-    const encryptedCardNumber = encrypt(cardNumber);
-
-    const newCard = await PaymentCard.create({
-      customerId,
-      cardNumber: encryptedCardNumber,
-      billingAddress,
-      expirationDate,
-    });
-
-    return NextResponse.json(newCard, { status: 201 });
-  } catch (err) {
     return NextResponse.json(
-      { error: "Failed to create payment card" },
-      { status: 500 }
+      { error: error.message || "Failed to create payment card" },
+      { status }
     );
   }
 }
 
+/**
+ * Retrieves payment cards for a user.
+ *
+ * Reads the userId query parameter, calls the service layer,
+ * and returns stored cards with masked numbers.
+ *
+ * @param req - The incoming HTTP request.
+ * @returns A JSON response containing cards or an error message.
+ */
 export async function GET(req: NextRequest) {
   try {
-    await dbConnect();
-
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("userId");
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: "Missing userId" },
-        { status: 400 }
-      );
-    }
+    const userId = searchParams.get("userId") || "";
 
-    const cards = await PaymentCard.find({ customerId: userId });
+    const cards = await getPaymentCardsByUserId(userId);
 
-    const safeCards = cards.map((card) => {
-      const decrypted = decrypt(card.cardNumber);
+    return NextResponse.json(cards, { status: 200 });
+  } catch (error: any) {
+    const status =
+      error.message === "Missing userId"
+        ? 400
+        : 500;
 
-      return {
-        ...card.toObject(),
-
-        // FULL value (for editing)
-        cardNumber: decrypted,
-
-        // MASKED value (for display only)
-        cardNumberMasked: `**** **** **** ${decrypted.slice(-4)}`,
-      };
-    });
-
-    return NextResponse.json(safeCards, { status: 200 });
-  } catch (err) {
     return NextResponse.json(
-      { error: "Failed to fetch payment cards" },
-      { status: 500 }
+      { error: error.message || "Failed to fetch payment cards" },
+      { status }
     );
   }
 }
