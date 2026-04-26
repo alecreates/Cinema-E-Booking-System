@@ -1,31 +1,39 @@
-import { NextRequest, NextResponse } from "next/server";
-import { dbConnect } from "@/lib/mongodb";
-import User from "@/models/User";
+// app/api/verify/route.ts
 
+import { NextRequest, NextResponse } from "next/server";
+import { verifyUser } from "@/services/UserService";
+
+/**
+ * Verifies a user account.
+ *
+ * Reads the token from query parameters, calls the
+ * service layer to activate the user account, and
+ * redirects to the verified page on success.
+ *
+ * @param req - The incoming HTTP request.
+ * @returns A redirect response or JSON error response.
+ */
 export async function GET(req: NextRequest) {
     try {
-        await dbConnect();
-
         const { searchParams } = new URL(req.url);
         const token = searchParams.get("token");
 
-        if (!token) {
-            return NextResponse.json({ message: "Invalid token" }, { status: 400 });
-        }
-
-        const user = await User.findOneAndUpdate(
-            { verificationToken: token },
-            { status: "active", verificationToken: null },
-            { new: true } // return the updated document
-        );
+        const user = await verifyUser(token || "");
 
         if (!user) {
-            return NextResponse.json({ message: "User not found" }, { status: 404 });
+            return NextResponse.json(
+                { message: "User not found" },
+                { status: 404 }
+            );
         }
 
         return NextResponse.redirect(new URL("/Verified", req.url));
-    } catch (err) {
-        console.error("Verify error:", err);
-        return NextResponse.json({ message: "Server error" }, { status: 500 });
+    } catch (error: any) {
+        console.error("Verify error:", error);
+
+        return NextResponse.json(
+            { message: error.message || "Server error" },
+            { status: 400 }
+        );
     }
 }
