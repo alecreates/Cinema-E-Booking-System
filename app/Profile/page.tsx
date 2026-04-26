@@ -6,7 +6,6 @@ import { Container, Row, Col, Card, Button, Form, Alert, Modal } from "react-boo
 import { useUser } from "@/app/context/UserContext";
 import emailjs from "@emailjs/browser";
 import { Movie } from "@/types/movie";
-import { mockPaymentCards } from "@/app/mock/paymentMock";
 
 const Profile = () => {
   const router = useRouter();

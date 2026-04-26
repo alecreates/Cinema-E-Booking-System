@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getShowsbyMovieId } from "@/services/ShowService";
 import "@/models/ShowRoom"
 type RouteParams = {
-    params: Promise<{ id: string}>;
+    params: Promise<{ id: string }>;
 };
 
 /**
@@ -17,13 +17,13 @@ type RouteParams = {
  * @param context.params - Promise resolving to route parameters.
  * @returns A JSON response containing matching shows or an error message.
  */
-export async function GET(_request: Request, {params}: RouteParams){
-    try{
-    const {id} = await params;
-    const item = await getShowsbyMovieId(id);
-    return NextResponse.json(item, {status:200})
+export async function GET(_request: Request, { params }: RouteParams) {
+    try {
+        const { id } = await params;
+        const item = await getShowsbyMovieId(id);
+        return NextResponse.json(item, { status: 200 })
     }
-    catch(error){
+    catch (error) {
 
         console.error("GET /api/shows/[id] error:", error);
         return NextResponse.json(
