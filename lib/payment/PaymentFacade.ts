@@ -104,10 +104,10 @@ export class PaymentFacade {
     const subtotalNumber = parseFloat(input.subtotal);
 
     // ✅ 2. Fetch promotions (filtered by promoCode)
-    const promotions = await this.fetchPromotions(input.promoCode);
+    //const promotions = await this.fetchPromotions(input.promoCode);
 
     // ✅ 3. Apply decorator pattern
-    const finalTotal = applyPromotions(subtotalNumber, promotions);
+    const finalTotal = await applyPromotions(subtotalNumber, input.promoCode);
 
     // ✅ 4. Create booking with FINAL total
     const booking = await this.createBooking(input, finalTotal);
