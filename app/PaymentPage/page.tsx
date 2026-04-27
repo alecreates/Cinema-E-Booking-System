@@ -1,16 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { Alert, Badge, Button, Card, Col, Container, Form, ListGroup, Row, Spinner } from "react-bootstrap";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/app/context/UserContext";
 import { paymentFacade, SavedCard, TicketType } from "@/lib/payment/PaymentFacade";
 import { applyPromotions } from "@/lib/pricing/applyPromotions";
+import { PiCardholder } from "react-icons/pi";
 
 const TICKET_LABELS: Record<TicketType, string> = {
   adult: "Adult",
   child: "Child",
   senior: "Senior",
+};
+const EMPTY_NEW_CARD = {
+  cardholderName: "",
+  cardNumber: "",
+  expirationDate: "",
+  billingAddress: "",
 };
 
 const getCurrentTimestamp = () => new Date().getTime();
@@ -58,6 +65,12 @@ const PaymentPage = () => {
   const [appliedPromo, setAppliedPromo] = useState(promoCode);
   const [discountedTotal, setDiscountedTotal] = useState(Number(subtotal));
 
+  const [showNewCardForm, setShowNewCardForm] = useState(false);
+  const [newCard, setNewCard] = useState(EMPTY_NEW_CARD);
+  const [isSavingCard, setIsSavingCard] = useState(false);
+  const [saveCardError, setSaveCardError] = useState("")
+
+ 
   const tickets = (["adult", "child", "senior"] as TicketType[])
     .map((type) => ({
       type,
@@ -69,6 +82,7 @@ const PaymentPage = () => {
     () => cards.find((card) => card._id === selectedCardId) || null,
     [cards, selectedCardId]
   );
+  const atCardLimit = cards.length >= 3;
 
   useEffect(() => {
     const fetchCards = async () => {
@@ -123,6 +137,49 @@ const PaymentPage = () => {
 
   const handleApplyPromo = () => {
     setAppliedPromo(promoInput.trim());
+  };
+
+  const handleNewCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setNewCard((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSaveNewCard = async () => {
+    setSaveCardError("");
+
+    const { cardholderName, cardNumber, expirationDate, billingAddress } = newCard;
+
+    if (!cardholderName || !cardNumber || !expirationDate || !billingAddress) {
+      setSaveCardError("Please fill in all card fields.");
+      return;
+    }
+
+    if (!currentUser?.id) {
+      setSaveCardError("You must be logged in to save a card.");
+      return;
+    }
+
+    setIsSavingCard(true);
+
+    try {
+      const saved = await paymentFacade.saveNewCard({
+        userId: currentUser.id,
+        cardholderName,
+        cardNumber,
+        expirationDate,
+        billingAddress,
+      });
+
+      setCards((prev) => [...prev, saved]);
+      setSelectedCardId(saved._id);
+      setNewCard(EMPTY_NEW_CARD);
+      setShowNewCardForm(false);
+    } catch (error) {
+      setSaveCardError(
+        error instanceof Error ? error.message : "Failed to save card. Please try again."
+      );
+    } finally {
+      setIsSavingCard(false);
+    }
   };
 
   const handleCheckout = async () => {
@@ -185,6 +242,7 @@ const PaymentPage = () => {
       setIsSubmitting(false);
     }
   };
+
 
   return (
     <Container fluid className="min-vh-100 bg-light py-4">
@@ -310,12 +368,110 @@ const PaymentPage = () => {
                             id={card._id}
                             className="mb-3"
                             checked={selectedCardId === card._id}
-                            onChange={() => setSelectedCardId(card._id)}
+                            onChange={() => {
+                              setSelectedCardId(card._id);
+                              setShowNewCardForm(false);
+                              setSaveCardError("")
+                            }}
                             label={`${card.cardNumberMasked} • Expires ${card.expirationDate} • ${card.billingAddress}`}
                           />
                         ))}
                       </Form>
 
+                      {!atCardLimit ? (
+                        <>
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            className="mb-3"
+                            onClick={() => {
+                              setShowNewCardForm((prev) => !prev);
+                              setSelectedCardId("");
+                              setSaveCardError("");
+                            }}
+                        >
+                          {showNewCardForm ? "Cancel" : "+ Add a new card"}
+                        </Button>
+
+                        {showNewCardForm && (
+                          <Card className="mb-3 border">
+                            <Card.Body>
+                              <p className="fw-semibold mb-3">New Card Details</p>
+
+                              <Form.Group className="mb-2">
+                                <Form.Label>Cardholder Name</Form.Label>
+                                <Form.Control
+                                  name="cardholderName"
+                                  value={newCard.cardholderName}
+                                  onChange={handleNewCardChange}
+                                  placeholder="Name on card"
+                                />
+                              </Form.Group>
+
+                              <Form.Group className="mb-2">
+                                <Form.Label>Card Number</Form.Label>
+                                <Form.Control
+                                  name="cardNumber"
+                                  value={newCard.cardNumber}
+                                  onChange={handleNewCardChange}
+                                  placeholder="1234 5678 9012 3456"
+                                  maxLength={19}
+                                />
+                              </Form.Group>
+
+                              <Form.Group className="mb-2">
+                                <Form.Label>Expiration Date</Form.Label>
+                                <Form.Control
+                                  name="expirationDate"
+                                  value={newCard.expirationDate}
+                                  onChange={handleNewCardChange}
+                                  placeholder="MM/YY"
+                                  maxLength={5}
+                                />
+                              </Form.Group>
+
+                              <Form.Group className="mb-3">
+                                <Form.Label>Billing Address</Form.Label>
+                                <Form.Control
+                                  name="billingAddress"
+                                  value={newCard.billingAddress}
+                                  onChange={handleNewCardChange}
+                                  placeholder="123 Main St, City, State"
+                                />
+                              </Form.Group>
+
+                              {saveCardError && (
+                                <Alert variant="danger" className="mb-2">
+                                  {saveCardError}
+                                </Alert>
+                              )}
+
+                              <Button
+                                variant="primary"
+                                onClick={handleSaveNewCard}
+                                disabled={isSavingCard}
+                                className="w-100"
+                              >
+                                {isSavingCard ? (
+                                  <>
+                                    <Spinner animation="border" size="sm" className="me-2" />
+                                    Saving Card...
+                                  </>
+                                ) : (
+                                  "Save Card"
+                                )}
+                              </Button>
+                            </Card.Body>
+                          </Card>
+                        )}
+                      </>
+                    ) : (
+                      <Alert variant="info" className="mb-3">
+                        You have reached the 3-card limit. Remove an existing card to add a new one.
+                      </Alert>
+                    )}
+                      {selectedCardId && (
+                        <>
                       {checkoutError && (
                           <Alert variant="danger" className="mt-3 mb-0">
                             {checkoutError}
@@ -325,18 +481,103 @@ const PaymentPage = () => {
                       <Button
                         className="mt-3 w-100"
                         onClick={handleCheckout}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || (lockExpiresAt > 0 && lockTimeRemaining <= 0)}
                       >
                         {isSubmitting ? "Processing Checkout..." : "Checkout"}
                       </Button>
+                      </>
+                      )}
                     </>
                   )}
-
                     {!loadingCards && !cardsError && cards.length === 0 && (
-                      <Alert variant="warning" className="mb-0">
-                        No saved payment methods were found on your account.
-                      </Alert>
-                    )}
+                        <>
+                          <p className="text-muted mb-3">No saved payment methods found. Add a card to continue.</p>
+
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            className="mb-3"
+                            onClick={() => {
+                              setShowNewCardForm((prev) => !prev);
+                              setSaveCardError("");
+                            }}
+                          >
+                            {showNewCardForm ? "Cancel" : "+ Add a new card"}
+                          </Button>
+
+                          {showNewCardForm && (
+                            <Card className="mb-3 border">
+                              <Card.Body>
+                                <p className="fw-semibold mb-3">New Card Details</p>
+
+                                <Form.Group className="mb-2">
+                                  <Form.Label>Cardholder Name</Form.Label>
+                                  <Form.Control
+                                    name="cardholderName"
+                                    value={newCard.cardholderName}
+                                    onChange={handleNewCardChange}
+                                    placeholder="Name on card"
+                                  />
+                                </Form.Group>
+
+                                <Form.Group className="mb-2">
+                                  <Form.Label>Card Number</Form.Label>
+                                  <Form.Control
+                                    name="cardNumber"
+                                    value={newCard.cardNumber}
+                                    onChange={handleNewCardChange}
+                                    placeholder="1234 5678 9012 3456"
+                                    maxLength={19}
+                                  />
+                                </Form.Group>
+
+                                <Form.Group className="mb-2">
+                                  <Form.Label>Expiration Date</Form.Label>
+                                  <Form.Control
+                                    name="expirationDate"
+                                    value={newCard.expirationDate}
+                                    onChange={handleNewCardChange}
+                                    placeholder="MM/YY"
+                                    maxLength={5}
+                                  />
+                                </Form.Group>
+
+                                <Form.Group className="mb-3">
+                                  <Form.Label>Billing Address</Form.Label>
+                                  <Form.Control
+                                    name="billingAddress"
+                                    value={newCard.billingAddress}
+                                    onChange={handleNewCardChange}
+                                    placeholder="123 Main St, City, State"
+                                  />
+                                </Form.Group>
+
+                                {saveCardError && (
+                                  <Alert variant="danger" className="mb-2">
+                                    {saveCardError}
+                                  </Alert>
+                                )}
+
+                                <Button
+                                  variant="primary"
+                                  onClick={handleSaveNewCard}
+                                  disabled={isSavingCard}
+                                  className="w-100"
+                                >
+                                  {isSavingCard ? (
+                                    <>
+                                      <Spinner animation="border" size="sm" className="me-2" />
+                                      Saving Card...
+                                    </>
+                                  ) : (
+                                    "Save Card"
+                                  )}
+                                </Button>
+                              </Card.Body>
+                            </Card>
+                          )}
+                        </>
+                      )}
                 </Card.Body>
               </Card>
 

@@ -40,6 +40,13 @@ export type ProcessCheckoutInput = {
   tickets: CheckoutTicket[];
   promoCode?: string; // ✅ user-entered promo
 };
+export type NewCardInput = {
+  userId: string;
+  cardholderName: string;
+  cardNumber: string;
+  expirationDate: string;
+  billingAddress: string;
+};
 
 type CreatedBooking = {
   _id: string;
@@ -63,6 +70,30 @@ export class PaymentFacade {
     }
 
     return data;
+  }
+  async saveNewCard(input: NewCardInput): Promise <SavedCard> {
+    const response = await fetch("/api/paymentcards", {
+      method: "POST",
+      headers:{
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        customerId: input.userId,
+        cardholderName: input.cardholderName,
+        cardNumber: input.cardNumber,
+        expirationDate: input.expirationDate,
+        billingAddress: input.billingAddress
+      })
+    })
+    const data = await response.json();
+    if (!response.ok){
+      throw new Error(data.error || "Failed to save payment card.");
+    }
+    return {
+      ...data,
+      cardNumberMasked: `**** **** **** ${input.cardNumber.replace(/\s/g, "").slice(-4)}`,
+    }
+
   }
 
   async processCheckout(input: ProcessCheckoutInput) {
