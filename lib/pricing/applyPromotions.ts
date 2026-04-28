@@ -53,7 +53,6 @@ export async function applyPromotions(basePrice: number, promoCode: string) {
 
   const promo = await getPromoFromAPI(promoCode);
 
-  // ✅ REQUIRED FIX: prevent silent invalid promo objects
   if (!promo || typeof promo.type !== "string" || typeof promo.value !== "number") {
     return price.getTotal();
   }
