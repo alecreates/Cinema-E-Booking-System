@@ -100,16 +100,16 @@ export class PaymentFacade {
     this.validateSeatLock(input.lockExpiresAt);
     this.validatePaymentMethod(input.selectedCardId);
 
-    // ✅ 1. Convert subtotal
+    // 1. Convert subtotal
     const subtotalNumber = parseFloat(input.subtotal);
 
-    // ✅ 2. Fetch promotions (filtered by promoCode)
+    // 2. Fetch promotions (filtered by promoCode)
     //const promotions = await this.fetchPromotions(input.promoCode);
 
-    // ✅ 3. Apply decorator pattern
+    // 3. Apply decorator pattern
     const finalTotal = await applyPromotions(subtotalNumber, input.promoCode);
 
-    // ✅ 4. Create booking with FINAL total
+    //  4. Create booking with FINAL total
     const booking = await this.createBooking(input, finalTotal);
 
     await this.createTickets(booking._id, input);
@@ -121,7 +121,7 @@ export class PaymentFacade {
     return { emailSent: true, bookingId: booking._id };
   }
 
-  // ✅ FETCH PROMOS USING PROMO CODE
+  // FETCH PROMOS USING PROMO CODE
   private async fetchPromotions(promoCode?: string) {
     if (!promoCode) return [];
 
